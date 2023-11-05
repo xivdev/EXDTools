@@ -16,16 +16,22 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '7.x.x'
-      - name: Build
-        run: dotnet build -c Release
+      - name: Publish Linux
+        run: dotnet publish -c Release -r linux-x64 -p:PublishSingleFile=true -p:DebugType=embedded --self-contained false
+      - name: Publish Windows
+        run: dotnet publish -c Release -r win-x64 -p:PublishSingleFile=true -p:DebugType=embedded --self-contained false
       - name: Create Release
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           mkdir release-out
-          zip -r release-out/BasicSchemaGenerator.zip BasicSchemaGenerator/bin/Release/net7.0/
-          zip -r release-out/DirectoryManager.zip DirectoryManager/bin/Release/net7.0/
-          zip -r release-out/SchemaConverter.zip SchemaConverter/bin/Release/net7.0/
-          zip -r release-out/SchemaValidator.zip SchemaValidator/bin/Release/net7.0/
+          zip -j release-out/BasicSchemaGenerator-win-x64.zip BasicSchemaGenerator/bin/Release/net7.0/win-x64/publish/*
+          zip -j release-out/DirectoryManager-win-x64.zip DirectoryManager/bin/Release/net7.0/win-x64/publish/*
+          zip -j release-out/SchemaConverter-win-x64.zip SchemaConverter/bin/Release/net7.0/win-x64/publish/*
+          zip -j release-out/SchemaValidator-win-x64.zip SchemaValidator/bin/Release/net7.0/win-x64/publish/*
+          zip -j release-out/BasicSchemaGenerator-linux-x64.zip BasicSchemaGenerator/bin/Release/net7.0/linux-x64/publish/*
+          zip -j release-out/DirectoryManager-linux-x64.zip DirectoryManager/bin/Release/net7.0/linux-x64/publish/*
+          zip -j release-out/SchemaConverter-linux-x64.zip SchemaConverter/bin/Release/net7.0/linux-x64/publish/*
+          zip -j release-out/SchemaValidator-linux-x64.zip SchemaValidator/bin/Release/net7.0/linux-x64/publish/*
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: ${{ github.ref == 'refs/heads/main' }}
@@ -33,5 +39,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: release-out/**
-          name: Release for ${{ steps.define-version.outputs.commit }}
+          name: Release for ${{ steps.define-version.outputs.version }}
           tag_name:  ${{ steps.define-version.outputs.version }}
