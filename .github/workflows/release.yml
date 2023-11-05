@@ -24,14 +24,14 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           mkdir release-out
-          zip -j release-out/BasicSchemaGenerator-win-x64.exe BasicSchemaGenerator/bin/Release/net7.0/win-x64/publish/BasicSchemaGenerator.exe
-          zip -j release-out/DirectoryManager-win-x64.exe DirectoryManager/bin/Release/net7.0/win-x64/publish/DirectoryManager.exe
-          zip -j release-out/SchemaConverter-win-x64.exe SchemaConverter/bin/Release/net7.0/win-x64/publish/SchemaConverter.exe
-          zip -j release-out/SchemaValidator-win-x64.exe SchemaValidator/bin/Release/net7.0/win-x64/publish/SchemaValidator.exe
-          zip -j release-out/BasicSchemaGenerator-linux-x64 BasicSchemaGenerator/bin/Release/net7.0/linux-x64/publish/BasicSchemaGenerator
-          zip -j release-out/DirectoryManager-linux-x64 DirectoryManager/bin/Release/net7.0/linux-x64/publish/DirectoryManager
-          zip -j release-out/SchemaConverter-linux-x64 SchemaConverter/bin/Release/net7.0/linux-x64/publish/SchemaConverter
-          zip -j release-out/SchemaValidator-linux-x64 SchemaValidator/bin/Release/net7.0/linux-x64/publish/SchemaValidator
+          cp BasicSchemaGenerator/bin/Release/net7.0/win-x64/publish/BasicSchemaGenerator.exe release-out/BasicSchemaGenerator-win-x64.exe
+          cp DirectoryManager/bin/Release/net7.0/win-x64/publish/DirectoryManager.exe release-out/DirectoryManager-win-x64.exe
+          cp SchemaConverter/bin/Release/net7.0/win-x64/publish/SchemaConverter.exe release-out/SchemaConverter-win-x64.exe
+          cp SchemaValidator/bin/Release/net7.0/win-x64/publish/SchemaValidator.exe release-out/SchemaValidator-win-x64.exe
+          cp BasicSchemaGenerator/bin/Release/net7.0/linux-x64/publish/BasicSchemaGenerator release-out/BasicSchemaGenerator-linux-x64
+          cp DirectoryManager/bin/Release/net7.0/linux-x64/publish/DirectoryManager release-out/DirectoryManager-linux-x64
+          cp SchemaConverter/bin/Release/net7.0/linux-x64/publish/SchemaConverter release-out/SchemaConverter-linux-x64
+          cp SchemaValidator/bin/Release/net7.0/linux-x64/publish/SchemaValidator release-out/SchemaValidator-linux-x64
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: ${{ github.ref == 'refs/heads/main' }}
