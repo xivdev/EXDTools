@@ -7,11 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Define Version
+      - name: Define version
         id: define-version
-        run: |
-          $env:COMMIT = $env:GITHUB_SHA.Substring(0, 7)
-          echo "::set-output name=commit::$env:COMMIT"
+        run: echo "version=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
@@ -34,4 +32,4 @@ jobs:
         with:
           files: release-out/**
           name: Release for ${{ steps.define-version.outputs.commit }}
-          tag_name:  ${{ steps.define-version.outputs.commit }}
+          tag_name:  ${{ steps.define-version.outputs.version }}
