@@ -22,10 +22,10 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           mkdir release-out
-          Compress-Archive -Path .\BasicSchemaGenerator\bin\Release\net7.0-windows\* -DestinationPath .\release-out\BasicSchemaGenerator.zip -Force
-          Compress-Archive -Path .\DirectoryManager\bin\Release\net7.0-windows\* -DestinationPath .\release-out\DirectoryManager.zip -Force
-          Compress-Archive -Path .\SchemaConverter\bin\Release\net7.0-windows\* -DestinationPath .\release-out\SchemaConverter.zip -Force
-          Compress-Archive -Path .\SchemaValidator\bin\Release\net7.0-windows\* -DestinationPath .\release-out\SchemaValidator.zip -Force
+          zip -r release-out/BasicSchemaGenerator.zip BasicSchemaGenerator/bin/Release/net7.0/
+          zip -r release-out/DirectoryManager.zip DirectoryManager/bin/Release/net7.0/
+          zip -r release-out/SchemaConverter.zip SchemaConverter/bin/Release/net7.0/
+          zip -r release-out/SchemaValidator.zip SchemaValidator/bin/Release/net7.0/
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: ${{ github.ref == 'refs/heads/main' }}
