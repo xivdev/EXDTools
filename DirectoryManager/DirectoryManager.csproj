@@ -6,7 +6,6 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
-        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
@@ -17,15 +16,10 @@
       <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
       <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     </ItemGroup>
-    
-    <ItemGroup>
-      <None Remove="Dockerfile" />
-    </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\EXDCommon\EXDCommon.csproj" />
       <ProjectReference Include="..\lib\ZiTool\ZiPatchLib\ZiPatchLib.csproj" />
-      <ProjectReference Include="lib\ZiTool\ZiPatchLib\ZiPatchLib.csproj" />
     </ItemGroup>
 
 

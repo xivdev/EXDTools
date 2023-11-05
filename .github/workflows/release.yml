@@ -13,13 +13,13 @@ jobs:
         id: define-version
         run: echo "version=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '7.x.x'
       - name: Build
         run: dotnet build -c Release
       - name: Create Release
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           mkdir release-out
           Compress-Archive -Path .\BasicSchemaGenerator\bin\Release\net7.0-windows\* -DestinationPath .\release-out\BasicSchemaGenerator.zip -Force
@@ -28,7 +28,7 @@ jobs:
           Compress-Archive -Path .\SchemaValidator\bin\Release\net7.0-windows\* -DestinationPath .\release-out\SchemaValidator.zip -Force
       - name: Create Release
         uses: softprops/action-gh-release@v1
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
