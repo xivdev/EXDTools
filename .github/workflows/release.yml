@@ -6,7 +6,8 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+        submodules: true
       - name: Define version
         id: define-version
         run: echo "version=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
