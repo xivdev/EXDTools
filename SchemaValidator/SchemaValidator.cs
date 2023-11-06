@@ -132,6 +132,12 @@ public class SchemaValidator
 			Console.WriteLine($"{result.Status}: {result.SheetName} - {result.ValidatorName}{msgfmt}{result.Message}");
 		}
 		
+		foreach (var result in results.Results.Where(r => r.Status == ValidationStatus.Failed))
+		{
+			var msgfmt = result.Message == "" ? "" : $" - ";
+			Console.WriteLine($"{result.Status}: {result.SheetName} - {result.ValidatorName}{msgfmt}{result.Message}");
+		}
+		
 		foreach (var result in results.Results.Where(r => r.Status == ValidationStatus.Error))
 		{
 			var msgfmt = result.Message == "" ? "" : $" - ";
