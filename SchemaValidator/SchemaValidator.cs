@@ -19,8 +19,8 @@ public class SchemaValidator
 	{
 		if (args.Length is not 3 and not 4 and not 5)
 		{
-			Console.WriteLine("Usage: SchemaValidator.exe <game install directory> <json schema file> <schema directory>");
-			Console.WriteLine("OR: SchemaValidator.exe <json directory file> <storage path> <json schema file> <schema directory>");
+			Console.WriteLine("Usage: SchemaValidator.exe <game install directory> <json schema file> <schema directory> [CI]");
+			Console.WriteLine("OR: SchemaValidator.exe <json directory file> <storage path> <json schema file> <schema directory> [CI]");
 			return;
 		}
 		
@@ -29,13 +29,13 @@ public class SchemaValidator
 
 		IGameFileAccess? accessor = null;
 
-		if (args.Length == 3)
+		if (args.Length == 3 || (args.Length == 4 && args[3] == "CI"))
 		{
 			accessor = new LuminaFileAccess(new GameData(args[0]));
 			schemaFile = args[1];
 			schemaDir = args[2];
 		}
-		else if (args.Length == 4)
+		else if (args.Length == 4 || args.Length == 5)
 		{
 			var directory = JsonSerializer.Deserialize<PatchDataDirectory>(File.ReadAllText(args[0]));
 			if (directory == null)
