@@ -29,6 +29,16 @@ public static class SerializeUtil
 	{
 		return _serializer.Serialize(o);
 	}
+	
+	public static T? Deserialize<T>(string s)
+	{
+		return _serializer.Deserialize<T>(s);
+	}
+
+	public static object? Deserialize(string s)
+	{
+		return _serializer.Deserialize(s);
+	}
 }
 
 internal class CustomDictionarySerializer : DictionarySerializer

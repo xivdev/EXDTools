@@ -1,4 +1,4 @@
-﻿using EXDCommon.FileAccess;
+using EXDCommon.FileAccess;
 using EXDCommon.FileAccess.Directory;
 using EXDCommon.FileAccess.Lumina;
 using EXDCommon.SchemaModel.EXDSchema;
@@ -93,7 +93,7 @@ public class SchemaValidator
 			Sheet sheet;
 			try
 			{
-				sheet = JsonConvert.DeserializeObject<Sheet>(File.ReadAllText(schemaPath))!;
+				sheet = SerializeUtil.Deserialize<Sheet>(File.ReadAllText(schemaPath))!;
 			}
 			catch (Exception e)
 			{

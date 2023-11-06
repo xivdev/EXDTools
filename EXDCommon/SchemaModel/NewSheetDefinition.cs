@@ -2,6 +2,8 @@
 // ReSharper disable InconsistentNaming
 
 using System.ComponentModel;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using SharpYaml;
 using SharpYaml.Serialization;
 
@@ -39,6 +41,7 @@ public class Field
 
 	[YamlMember(2)]
 	[DefaultValue(FieldType.Scalar)]
+	[JsonConverter(typeof(StringEnumConverter), true)]
 	public FieldType Type { get; set; }
 
 	[YamlMember(3)]
