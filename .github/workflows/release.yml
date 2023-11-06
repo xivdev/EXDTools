@@ -32,6 +32,7 @@ jobs:
           cp DirectoryManager/bin/Release/net7.0/linux-x64/publish/DirectoryManager release-out/DirectoryManager-linux-x64
           cp SchemaConverter/bin/Release/net7.0/linux-x64/publish/SchemaConverter release-out/SchemaConverter-linux-x64
           cp SchemaValidator/bin/Release/net7.0/linux-x64/publish/SchemaValidator release-out/SchemaValidator-linux-x64
+          cp SchemaValidator/Schema.json release-out/Schema.json
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: ${{ github.ref == 'refs/heads/main' }}
