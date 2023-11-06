@@ -17,7 +17,7 @@ public class SchemaValidator
 {
 	public static void Main(string[] args)
 	{
-		if (args.Length is not 3 and not 4)
+		if (args.Length is not 3 and not 4 and not 5)
 		{
 			Console.WriteLine("Usage: SchemaValidator.exe <game install directory> <json schema file> <schema directory>");
 			Console.WriteLine("OR: SchemaValidator.exe <json directory file> <storage path> <json schema file> <schema directory>");
@@ -110,7 +110,7 @@ public class SchemaValidator
 				continue;
 			}
 
-			Console.WriteLine($"{sheetName}");
+			// Console.WriteLine($"{sheetName}");
 
 			foreach (var validator in validators)
 				results.Add(validator.Validate(exh, sheet));
@@ -140,7 +140,19 @@ public class SchemaValidator
 		
 		var successCount = results.Results.Count(r => r.Status == ValidationStatus.Success);
 		var warningCount = results.Results.Count(r => r.Status == ValidationStatus.Warning);
+		var failureCount = results.Results.Count(r => r.Status == ValidationStatus.Failed);
 		var errorCount = results.Results.Count(r => r.Status == ValidationStatus.Error);
-		Console.WriteLine($"{successCount} success, {warningCount} warnings, {errorCount} errors");
+		
+		Console.WriteLine($"{successCount} success, {warningCount} warnings, {failureCount} failures, {errorCount} errors");
+
+		// For CI
+		if (args.Length == 5)
+		{
+			File.WriteAllText("message", $"{successCount} success, {warningCount} warnings, {failureCount} failures, {errorCount} errors");
+			File.WriteAllText("success", $"{successCount}");
+			File.WriteAllText("warning", $"{warningCount}");
+			File.WriteAllText("failure", $"{failureCount}");
+			File.WriteAllText("error", $"{errorCount}");
+		}
 	}
 }
