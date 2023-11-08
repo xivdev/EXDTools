@@ -1,0 +1,3 @@
+[submodule "lib/ZiTool"]
+	path = lib/ZiTool
+	url = https://github.com/lmcintyre/ZiTool

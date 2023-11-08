@@ -1,0 +1,44 @@
+﻿name: Release Tools
+on: [push]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Define version
+        id: define-version
+        run: echo "version=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '7.x.x'
+      - name: Publish Linux
+        run: dotnet publish -c Release -r linux-x64 -p:PublishSingleFile=true -p:DebugType=embedded --self-contained false
+      - name: Publish Windows
+        run: dotnet publish -c Release -r win-x64 -p:PublishSingleFile=true -p:DebugType=embedded --self-contained false
+      - name: Collect Artifacts
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          mkdir release-out
+          cp BasicSchemaGenerator/bin/Release/net7.0/win-x64/publish/BasicSchemaGenerator.exe release-out/BasicSchemaGenerator-win-x64.exe
+          cp DirectoryManager/bin/Release/net7.0/win-x64/publish/DirectoryManager.exe release-out/DirectoryManager-win-x64.exe
+          cp SchemaConverter/bin/Release/net7.0/win-x64/publish/SchemaConverter.exe release-out/SchemaConverter-win-x64.exe
+          cp SchemaValidator/bin/Release/net7.0/win-x64/publish/SchemaValidator.exe release-out/SchemaValidator-win-x64.exe
+          cp BasicSchemaGenerator/bin/Release/net7.0/linux-x64/publish/BasicSchemaGenerator release-out/BasicSchemaGenerator-linux-x64
+          cp DirectoryManager/bin/Release/net7.0/linux-x64/publish/DirectoryManager release-out/DirectoryManager-linux-x64
+          cp SchemaConverter/bin/Release/net7.0/linux-x64/publish/SchemaConverter release-out/SchemaConverter-linux-x64
+          cp SchemaValidator/bin/Release/net7.0/linux-x64/publish/SchemaValidator release-out/SchemaValidator-linux-x64
+          cp SchemaValidator/Schema.json release-out/Schema.json
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: release-out/**
+          name: Release for ${{ steps.define-version.outputs.version }}
+          tag_name:  ${{ steps.define-version.outputs.version }}
