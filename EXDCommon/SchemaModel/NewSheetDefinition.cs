@@ -56,6 +56,11 @@ public class Field
 	[YamlMember(6)]
 	[YamlStyle(YamlStyle.Flow)]
 	public List<string>? Targets { get; set; }
+	
+	public override string ToString()
+	{
+		return $"{Name} ({Type})";
+	}
 }
 
 public class Condition

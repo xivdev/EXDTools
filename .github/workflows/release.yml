@@ -20,7 +20,7 @@ jobs:
         run: dotnet publish -c Release -r linux-x64 -p:PublishSingleFile=true -p:DebugType=embedded --self-contained false
       - name: Publish Windows
         run: dotnet publish -c Release -r win-x64 -p:PublishSingleFile=true -p:DebugType=embedded --self-contained false
-      - name: Create Release
+      - name: Collect Artifacts
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           mkdir release-out
