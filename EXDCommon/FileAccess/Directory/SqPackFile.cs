@@ -1,5 +1,5 @@
-﻿using Lumina.Data;
-using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
+using Lumina.Data;
 
 namespace EXDCommon.FileAccess.Directory;
 
@@ -11,11 +11,13 @@ public class SqPackFile
 	public ulong Offset { get; set; }
 	
 	[JsonIgnore]
+	[Newtonsoft.Json.JsonIgnore]
 	public FileResource? Resource { get; set; }
 }
 
 public class SqPackFile<T> : SqPackFile where T : FileResource
 {
 	[JsonIgnore]
+	[Newtonsoft.Json.JsonIgnore]
 	public T? TypedResource => Resource as T;
 }

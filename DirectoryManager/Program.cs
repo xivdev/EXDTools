@@ -23,6 +23,8 @@ public class Program
 			.WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
 			.CreateLogger();
 		
+		AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) => Log.Fatal(eventArgs.ExceptionObject as Exception, "Unhandled exception!");
+		
 		var outputDirectory = args[0];
 		var storageDirectory = args[1];
 		
