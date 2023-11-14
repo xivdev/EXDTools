@@ -36,10 +36,10 @@ public class Field
 	[YamlMember(0)]
 	public string? Name { get; set; }
 
-	[YamlMember(1)]
+	[YamlMember(2)]
 	public int? Count { get; set; }
 
-	[YamlMember(2)]
+	[YamlMember(1)]
 	[DefaultValue(FieldType.Scalar)]
 	[JsonConverter(typeof(StringEnumConverter), true)]
 	public FieldType Type { get; set; }
@@ -56,6 +56,18 @@ public class Field
 	[YamlMember(6)]
 	[YamlStyle(YamlStyle.Flow)]
 	public List<string>? Targets { get; set; }
+
+	/// <summary>
+	/// Useful for determining the order of fields in the sheet.
+	/// </summary>
+	[YamlIgnore]
+	public uint OffsetBasedIndex;
+
+	/// <summary>
+	/// Useful for determining the total column count of a specific field.
+	/// </summary>
+	[YamlIgnore]
+	public int FieldCount;
 	
 	public override string ToString()
 	{
