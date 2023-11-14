@@ -76,6 +76,7 @@ public class SchemaValidator
 			new ConditionValidator(accessor),
 			new ConditionRefValidator(accessor, testDict),
 			new DuplicateFieldNameValidator(accessor),
+			new ArrayTypingValidator(accessor),
 		};
 
 		var exl = accessor.GetFile<ExcelListFile>("exd/root.exl");
