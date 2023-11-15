@@ -15,12 +15,10 @@ public class ArrayTypingValidator : Validator
 
 	public override ValidationResults Validate(ExcelHeaderFile exh, Sheet sheet)
 	{
-		if (sheet.Name == "SpecialShop")
-			Debugger.Break();
 		var results = new ValidationResults();
 		var fields = SchemaUtil.Flatten(exh, sheet, true);
 
-		var grouped = fields.GroupBy(f => f.Field.Name);
+		var grouped = fields.GroupBy(f => f.Field.Path);
 		foreach (var group in grouped)
 		{
 			ExcelColumnDataType? baseType = null;
