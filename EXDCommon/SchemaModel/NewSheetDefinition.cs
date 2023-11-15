@@ -68,6 +68,18 @@ public class Field
 	/// </summary>
 	[YamlIgnore]
 	public int FieldCount;
+
+	/// <summary>
+	/// Field path in the form "Field.Subfield.Subsubfield"
+	/// </summary>
+	[YamlIgnore]
+	public string Path;
+	
+	/// <summary>
+	/// Field path in the form "Field[0].Subfield[1].Subsubfield[2]"
+	/// </summary>
+	[YamlIgnore]
+	public string PathWithArrayIndices;
 	
 	public override string ToString()
 	{

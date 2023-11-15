@@ -41,7 +41,7 @@ public static class SchemaUtil
 	{
 		var fields = new List<Field>();
 		foreach (var field in sheet.Fields)
-			Emit(fields, field, null, usePath);
+			Emit(fields, field, null);
 
 		var exhDefList = exh.ColumnDefinitions.ToList();
 		exhDefList.Sort((c1, c2) => DefinedColumn.CalculateBitOffset(c1).CompareTo(DefinedColumn.CalculateBitOffset(c2)));
@@ -59,12 +59,12 @@ public static class SchemaUtil
 		return definedColumns;
 	}
 
-	private static void Emit(List<Field> list, Field field, List<string> hierarchy = null, bool usePath = false)
+	private static void Emit(List<Field> list, Field field, List<(string, string)> hierarchy = null, string nameOverride = "")
 	{
 		if (field.Type != FieldType.Array)
 		{
 			// Single field
-			list.Add(CreateField(field, false, 0, hierarchy, usePath));
+			list.Add(CreateField(field, false, 0, hierarchy, nameOverride));
 		}
 		else if (field.Type == FieldType.Array)
 		{
@@ -73,7 +73,7 @@ public static class SchemaUtil
 			{
 				for (int i = 0; i < field.Count.Value; i++)
 				{
-					list.Add(CreateField(field, true, i, hierarchy, usePath));	
+					list.Add(CreateField(field, true, i, hierarchy, ""));
 				}
 			}
 			else
@@ -82,22 +82,22 @@ public static class SchemaUtil
 				{
 					foreach (var nestedField in field.Fields)
 					{
-						var usableHierarchy = hierarchy == null ? new List<string>() : new List<string>(hierarchy);
+						var usableHierarchy = hierarchy == null ? new List<(string, string)>() : new List<(string, string)>(hierarchy);
 						var hierarchyName = $"{field.Name}";
-						if (!usePath)
-							hierarchyName += $"[{i}]";
-						usableHierarchy.Add(hierarchyName);
-						Emit(list, nestedField, usableHierarchy, usePath);
+						var hierarchyName2 = $"{field.Name}[{i}]";
+						usableHierarchy.Add((hierarchyName, hierarchyName2));
+						Emit(list, nestedField, usableHierarchy, field.Name);
 					}	
 				}
 			}
 		}
 	}
 
-	private static Field CreateField(Field baseField, bool fieldIsArrayElement, int index, List<string> hierarchy, bool usePath)
+	private static Field CreateField(Field baseField, bool fieldIsArrayElement, int index, List<(string, string)>? hierarchy, string nameOverride)
 	{
 		var addedField = new Field
 		{
+			Name = baseField.Name,
 			Comment = baseField.Comment,
 			Count = null,
 			Type = baseField.Type == FieldType.Array ? FieldType.Scalar : baseField.Type,
@@ -106,25 +106,32 @@ public static class SchemaUtil
 			Targets = baseField.Targets,
 		};
 
-		var name = $"{baseField.Name}";
+		var path = $"{baseField.Name}";
+		var path2 = $"{baseField.Name}";
 		
 		if (fieldIsArrayElement)
 		{
-			name = $"{name}";
-			if (!usePath)
-				name += $"[{index}]";
+			path2 += $"[{index}]";
 		}
 
 		if (hierarchy != null)
 		{
-			addedField.Name = string.Join(".", hierarchy);
-			if (!string.IsNullOrEmpty(name))
-				addedField.Name += $".{name}";
+			addedField.Path = string.Join(".", hierarchy);
+			addedField.PathWithArrayIndices = string.Join(".", hierarchy);
+			if (!string.IsNullOrEmpty(path)) addedField.Path += $".{path}";
+			if (!string.IsNullOrEmpty(path)) addedField.PathWithArrayIndices += $".{path2}";
 		}
 		else
 		{
-			addedField.Name = name;
+			addedField.Path = path;
+			addedField.PathWithArrayIndices = path2;
 		}
+		
+		// This is for unnamed inner fields of arrays such as arrays of links
+		// We don't want to override the name of unnamed scalars though
+		if (baseField.Name == null && baseField.Type != FieldType.Scalar && nameOverride != "")
+			addedField.Name = nameOverride;
+		
 		return addedField;
 	}
 
