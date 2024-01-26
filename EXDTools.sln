@@ -14,6 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{5C037CD8-C1A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZiPatchLib", "lib\ZiTool\ZiPatchLib\ZiPatchLib.csproj", "{E974175E-D301-4F3F-A8BD-7AC42BD3D9FB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchemaUpdater", "SchemaUpdater\SchemaUpdater.csproj", "{31C1028A-CB73-428B-B2E6-3DE791564840}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +46,10 @@ Global
 		{E974175E-D301-4F3F-A8BD-7AC42BD3D9FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E974175E-D301-4F3F-A8BD-7AC42BD3D9FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E974175E-D301-4F3F-A8BD-7AC42BD3D9FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31C1028A-CB73-428B-B2E6-3DE791564840}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31C1028A-CB73-428B-B2E6-3DE791564840}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31C1028A-CB73-428B-B2E6-3DE791564840}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31C1028A-CB73-428B-B2E6-3DE791564840}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E974175E-D301-4F3F-A8BD-7AC42BD3D9FB} = {5C037CD8-C1A6-407C-AE18-5F09AE478977}

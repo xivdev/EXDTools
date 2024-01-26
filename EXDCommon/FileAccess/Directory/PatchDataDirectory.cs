@@ -1,7 +1,4 @@
-﻿using Lumina.Data;
-using Newtonsoft.Json;
-
-namespace EXDCommon.FileAccess.Directory;
+﻿namespace EXDCommon.FileAccess.Directory;
 
 public class PatchDataDirectory : IComparable
 {

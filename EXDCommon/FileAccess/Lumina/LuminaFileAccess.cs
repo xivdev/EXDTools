@@ -17,7 +17,7 @@ public class LuminaFileAccess : IGameFileAccess
 	public T? GetFile<T>(string path, string? origPath = null) where T : FileResource => _gameData.GetFile<T>(path);
 	public bool FileExists(string path) => _gameData.FileExists(path);
 	
-	public RawExcelSheet? GetRawExcelSheet(string sheetName, Language sheetLanguage = Language.English)
+	public RawExcelSheet? GetRawExcelSheet(string sheetName, bool sortByOffset = false, Language sheetLanguage = Language.English)
 	{
 		var path = $"exd/{sheetName}.exh";
 		var headerFile = GetFile<ExcelHeaderFile>(path);
@@ -27,7 +27,7 @@ public class LuminaFileAccess : IGameFileAccess
 			return null;
 		}
 
-		var newSheet = new RawExcelSheet(headerFile, sheetName, sheetLanguage, this);
+		var newSheet = new RawExcelSheet(headerFile, sheetName, sheetLanguage, this, sortByOffset);
 		newSheet.GenerateFilePages();
 
 		return newSheet;

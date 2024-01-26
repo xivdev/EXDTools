@@ -25,7 +25,7 @@ public class DirectoryFileAccess : IGameFileAccess
 		var sqpackFile = _directory.SqPackFiles[path];
 		var realPath = Path.Combine(_storagePath, sqpackFile.Hash[..2], sqpackFile.Hash);
 		
-		if(!File.Exists(realPath))
+		if (!File.Exists(realPath))
 		{
 			throw new FileNotFoundException($"the file at the path '{realPath}' doesn't exist");
 		}
@@ -39,7 +39,7 @@ public class DirectoryFileAccess : IGameFileAccess
 		var dataProperty = file.GetType().BaseType.GetProperty("Data", bindingFlags);
 		dataProperty.SetValue(file, fileContent);
         
-		if( origPath != null )
+		if (origPath != null)
 		{
 			var filePathProperty = file.GetType().BaseType.GetProperty("FilePath", bindingFlags);
 			filePathProperty.SetValue(file, fileContent);
@@ -53,7 +53,7 @@ public class DirectoryFileAccess : IGameFileAccess
 		return file;
 	}
 
-	public RawExcelSheet? GetRawExcelSheet(string sheetName, Language sheetLanguage = Language.English)
+	public RawExcelSheet? GetRawExcelSheet(string sheetName, bool sortByOffset = false, Language sheetLanguage = Language.English)
 	{
 		if (_sheets.TryGetValue(sheetName, out var sheet))
 		{
@@ -68,7 +68,7 @@ public class DirectoryFileAccess : IGameFileAccess
 			return null;
 		}
 
-		var newSheet = new RawExcelSheet(headerFile, sheetName, sheetLanguage, this);
+		var newSheet = new RawExcelSheet(headerFile, sheetName, sheetLanguage, this, sortByOffset);
 		newSheet.GenerateFilePages();
 		_sheets[sheetName] = newSheet;
 		

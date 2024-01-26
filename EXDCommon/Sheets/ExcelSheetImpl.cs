@@ -10,13 +10,15 @@ namespace EXDCommon.Sheets;
 
 public class ExcelSheetImpl
 {
-    internal ExcelSheetImpl( ExcelHeaderFile headerFile, string name, Language requestedLanguage, IGameFileAccess gameData )
+    internal ExcelSheetImpl( ExcelHeaderFile headerFile, string name, Language requestedLanguage, IGameFileAccess gameData, bool sortByOffset = false )
     {
         DataPages = new List< ExcelPage >();
         HeaderFile = headerFile;
         Name = name;
         RequestedLanguage = requestedLanguage;
         GameData = gameData;
+        
+        Columns = sortByOffset ? HeaderFile.ColumnDefinitions.OrderBy(DefinedColumn.CalculateBitOffset).ToArray() : HeaderFile.ColumnDefinitions;
     }
 
     /// <summary>
@@ -54,7 +56,7 @@ public class ExcelSheetImpl
     /// </summary>
     public readonly List< ExcelPage > DataPages;
 
-    public ExcelColumnDefinition[] Columns => HeaderFile.ColumnDefinitions;
+    public ExcelColumnDefinition[] Columns { get; private set; }
 
     private Dictionary< ushort, ExcelColumnDefinition >? _columnsByOffset;
 

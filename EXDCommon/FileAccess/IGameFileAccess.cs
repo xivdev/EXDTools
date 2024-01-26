@@ -6,6 +6,6 @@ namespace EXDCommon.FileAccess;
 public interface IGameFileAccess
 {
 	T? GetFile<T>(string path, string? origPath = null) where T : FileResource;
-	RawExcelSheet? GetRawExcelSheet(string sheetName, Language sheetLanguage = Language.English);
+	RawExcelSheet? GetRawExcelSheet(string sheetName, bool sortByOffset = false, Language sheetLanguage = Language.English);
 	bool FileExists(string path);
 }

@@ -10,7 +10,8 @@ namespace EXDCommon.Sheets;
 
 public class RawExcelSheet : ExcelSheetImpl, IEnumerable<RowParser>
 {
-	internal RawExcelSheet(ExcelHeaderFile headerFile, string name, Language requestedLanguage, IGameFileAccess gameData) : base(headerFile, name, requestedLanguage, gameData)
+	internal RawExcelSheet(ExcelHeaderFile headerFile, string name, Language requestedLanguage, IGameFileAccess gameData, bool sortByOffset = false)
+		: base(headerFile, name, requestedLanguage, gameData, sortByOffset)
 	{
 	}
 
