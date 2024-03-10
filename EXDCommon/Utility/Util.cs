@@ -59,4 +59,20 @@ public static class Util
 			_ => bitOffset,
 		};
 	}
+	
+	public static bool DictionaryEqual<T, TU>(Dictionary<T, List<TU>> oldDict, Dictionary<T, List<TU>> newDict) where T : notnull
+	{
+		// Simple check, are the counts the same?
+		if (!oldDict.Count.Equals(newDict.Count)) return false;
+
+		// Verify the keys
+		if (!oldDict.Keys.SequenceEqual(newDict.Keys)) return false;
+
+		// Verify the values for each key
+		foreach (var key in oldDict.Keys)
+			if (!oldDict[key].SequenceEqual(newDict[key]))
+				return false;
+
+		return true;
+	}
 }

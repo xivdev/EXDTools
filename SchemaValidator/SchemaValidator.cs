@@ -15,6 +15,23 @@ namespace SchemaValidator;
 
 public class SchemaValidator
 {
+	public static void Thing()
+	{
+		var outputDir = @"C:\Users\Liam\Desktop\tmp\worker\output";
+		var storageDir = @"C:\Users\Liam\Desktop\tmp\worker\storage";
+		
+		var baseDir = @"C:\Users\Liam\Documents\repos\EXDSchema\Schemas";
+		var schemaFileDir = @"C:\Users\Liam\Documents\repos\EXDTools\SchemaValidator\Schema.json";
+
+		foreach (var schemaDir in Directory.EnumerateDirectories(baseDir))
+		{
+			var gameVer = Path.GetFileName(schemaDir);
+			var dir = Path.Combine(outputDir, $"{gameVer}.json");
+			Console.WriteLine($"Gamever {gameVer}");
+			Main(new[] { dir, storageDir, schemaFileDir, schemaDir });
+		}
+	}
+	
 	public static void Main(string[] args)
 	{
 		if (args.Length is not 3 and not 4 and not 5)
@@ -127,23 +144,23 @@ public class SchemaValidator
 		
 		// ---
 		
-		foreach (var result in results.Results.Where(r => r.Status == ValidationStatus.Warning))
-		{
-			var msgfmt = result.Message == "" ? "" : $" - ";
-			Console.WriteLine($"{result.Status}: {result.SheetName} - {result.ValidatorName}{msgfmt}{result.Message}");
-		}
-		
-		foreach (var result in results.Results.Where(r => r.Status == ValidationStatus.Failed))
-		{
-			var msgfmt = result.Message == "" ? "" : $" - ";
-			Console.WriteLine($"{result.Status}: {result.SheetName} - {result.ValidatorName}{msgfmt}{result.Message}");
-		}
-		
-		foreach (var result in results.Results.Where(r => r.Status == ValidationStatus.Error))
-		{
-			var msgfmt = result.Message == "" ? "" : $" - ";
-			Console.WriteLine($"{result.Status}: {result.SheetName} - {result.ValidatorName}{msgfmt}{result.Message}");
-		}
+		// foreach (var result in results.Results.Where(r => r.Status == ValidationStatus.Warning))
+		// {
+		// 	var msgfmt = result.Message == "" ? "" : $" - ";
+		// 	Console.WriteLine($"{result.Status}: {result.SheetName} - {result.ValidatorName}{msgfmt}{result.Message}");
+		// }
+		//
+		// foreach (var result in results.Results.Where(r => r.Status == ValidationStatus.Failed))
+		// {
+		// 	var msgfmt = result.Message == "" ? "" : $" - ";
+		// 	Console.WriteLine($"{result.Status}: {result.SheetName} - {result.ValidatorName}{msgfmt}{result.Message}");
+		// }
+		//
+		// foreach (var result in results.Results.Where(r => r.Status == ValidationStatus.Error))
+		// {
+		// 	var msgfmt = result.Message == "" ? "" : $" - ";
+		// 	Console.WriteLine($"{result.Status}: {result.SheetName} - {result.ValidatorName}{msgfmt}{result.Message}");
+		// }
 		
 		var successCount = results.Results.Count(r => r.Status == ValidationStatus.Success);
 		var warningCount = results.Results.Count(r => r.Status == ValidationStatus.Warning);

@@ -80,7 +80,7 @@ public class Field
 	/// </summary>
 	[YamlIgnore]
 	public string PathWithArrayIndices;
-	
+
 	public override string ToString()
 	{
 		return $"{Name} ({Type})";

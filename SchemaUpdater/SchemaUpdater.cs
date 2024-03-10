@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
 using EXDCommon.FileAccess;
 using EXDCommon.SchemaModel.EXDSchema;
 using EXDCommon.Sheets;
@@ -307,19 +308,43 @@ public class SchemaUpdater
 
         return "";
     }
+
+    public static void TestUnflatten()
+    {
+        // Changed stuff test cases
+        // Aetheryte: added column at 20 (between columns)
+        // GimmickJump: unrecognized column changed in the middle of the columns
+        // WorldDCGroupType: added column at 2 (end)
+        
+        // Unflatten test cases
+        // No arrays: ActionCastTimeline
+        // var loadedSheet = SerializeUtil.Deserialize<Sheet>(File.ReadAllText(@"C:\Users\Liam\Documents\repos\EXDSchema\Schemas\2024.01.06.0000.0000\ActionCastTimeline.yml"));
+        // Simple array with no links: AnimationLOD
+        // var loadedSheet = SerializeUtil.Deserialize<Sheet>(File.ReadAllText(@"C:\Users\Liam\Documents\repos\EXDSchema\Schemas\2024.01.06.0000.0000\AnimationLOD.yml"));
+
+        var loadedSheet = SerializeUtil.Deserialize<Sheet>(File.ReadAllText(@"C:\Users\Liam\Documents\repos\EXDSchema\Schemas\2024.01.06.0000.0000\ActionCastTimeline.yml"));
+        var flattened = SchemaUtil.Flatten(loadedSheet);
+        // Debugger.Break();
+        
+        loadedSheet = SerializeUtil.Deserialize<Sheet>(File.ReadAllText(@"C:\Users\Liam\Documents\repos\EXDSchema\Schemas\2024.01.06.0000.0000\AnimationLOD.yml"));
+        flattened = SchemaUtil.Flatten(loadedSheet);
+        var unflatten = SchemaUtil.Unflatten(flattened);
+        Debugger.Break();
+
+    }
     
     private Sheet GenerateNewSchema(Sheet oldSchema, Sheet newSchema, Dictionary<int, int> columnMap)
     {
         var flattenedOldSchema = SchemaUtil.Flatten(oldSchema);
-        
+        return null;
     }
 
-    // private Dictionary<int, int> LoadColumnMap(string sheet, string mapFile)
-    // {
-    //     var json = File.ReadAllText(mapFile);
-    //     var data = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<int, int>>>(json);
-    //     return data[sheet];
-    // }
+    private Dictionary<int, int> LoadColumnMap(string sheet, string mapFile)
+    {
+        var json = File.ReadAllText(mapFile);
+        var data = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<int, int>>>(json);
+        return data[sheet];
+    }
 
     private Dictionary<uint, uint> GenerateColumnMap(RawExcelSheet oldSheet, RawExcelSheet newSheet) 
     {

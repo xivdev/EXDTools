@@ -18,14 +18,16 @@ public static class SchemaUtil
 
 	public static Sheet Flatten(Sheet sheet)
 	{
+		var newSheet = new Sheet { Name = sheet.Name, DisplayField = sheet.DisplayField };
 		var fields = new List<Field>();
+		
 		foreach (var field in sheet.Fields)
 			Emit(fields, field);
 
-		sheet.Fields = fields;
-		for (int i = 0; i < sheet.Fields.Count; i++)
-			sheet.Fields[i].OffsetBasedIndex = (uint)i;
-		return sheet;
+		newSheet.Fields = fields;
+		for (int i = 0; i < newSheet.Fields.Count; i++)
+			newSheet.Fields[i].OffsetBasedIndex = (uint)i;
+		return newSheet;
 	}
 
 	/// <summary>
@@ -59,12 +61,12 @@ public static class SchemaUtil
 		return definedColumns;
 	}
 
-	private static void Emit(List<Field> list, Field field, List<(string, string)> hierarchy = null, string nameOverride = "")
+	private static void Emit(List<Field> list, Field field, List<string> hierarchy = null, List<string> arrayHierarchy = null, string nameOverride = "")
 	{
 		if (field.Type != FieldType.Array)
 		{
 			// Single field
-			list.Add(CreateField(field, false, 0, hierarchy, nameOverride));
+			list.Add(CreateField(field, false, 0, hierarchy, arrayHierarchy, nameOverride));
 		}
 		else if (field.Type == FieldType.Array)
 		{
@@ -73,7 +75,7 @@ public static class SchemaUtil
 			{
 				for (int i = 0; i < field.Count.Value; i++)
 				{
-					list.Add(CreateField(field, true, i, hierarchy, ""));
+					list.Add(CreateField(field, true, i, hierarchy, arrayHierarchy, ""));
 				}
 			}
 			else
@@ -82,18 +84,20 @@ public static class SchemaUtil
 				{
 					foreach (var nestedField in field.Fields)
 					{
-						var usableHierarchy = hierarchy == null ? new List<(string, string)>() : new List<(string, string)>(hierarchy);
+						var usableHierarchy = hierarchy == null ? new List<string>() : new List<string>(hierarchy);
+						var usableArrayHierarchy = hierarchy == null ? new List<string>() : new List<string>(hierarchy);
 						var hierarchyName = $"{field.Name}";
-						var hierarchyName2 = $"{field.Name}[{i}]";
-						usableHierarchy.Add((hierarchyName, hierarchyName2));
-						Emit(list, nestedField, usableHierarchy, field.Name);
+						var arrayHierarchyName = $"{field.Name}[{i}]";
+						usableHierarchy.Add(hierarchyName);
+						usableArrayHierarchy.Add(arrayHierarchyName);
+						Emit(list, nestedField, usableHierarchy, usableArrayHierarchy, field.Name);
 					}	
 				}
 			}
 		}
 	}
 
-	private static Field CreateField(Field baseField, bool fieldIsArrayElement, int index, List<(string, string)>? hierarchy, string nameOverride)
+	private static Field CreateField(Field baseField, bool fieldIsArrayElement, int index, List<string>? hierarchy, List<string>? arrayHierarchy, string nameOverride)
 	{
 		var addedField = new Field
 		{
@@ -114,10 +118,10 @@ public static class SchemaUtil
 			path2 += $"[{index}]";
 		}
 
-		if (hierarchy != null)
+		if (hierarchy != null && arrayHierarchy != null)
 		{
 			addedField.Path = string.Join(".", hierarchy);
-			addedField.PathWithArrayIndices = string.Join(".", hierarchy);
+			addedField.PathWithArrayIndices = string.Join(".", arrayHierarchy);
 			if (!string.IsNullOrEmpty(path)) addedField.Path += $".{path}";
 			if (!string.IsNullOrEmpty(path)) addedField.PathWithArrayIndices += $".{path2}";
 		}
@@ -152,5 +156,68 @@ public static class SchemaUtil
 			return total * field.Count.Value;
 		}
 		return 1;
+	}
+
+	public static Sheet Unflatten(Sheet sheet)
+	{
+		var newSheet = new Sheet { Name = sheet.Name, DisplayField = sheet.DisplayField };
+		var fields = new List<Field>(sheet.Fields);
+
+		var result = false;
+		do
+		{
+			result = Unflatten(fields);
+		} while (!result);
+
+		newSheet.Fields = fields;
+		return newSheet;
+	}
+	
+	private static bool Unflatten(List<Field> fields)
+	{
+		if (!fields.Any()) return false;
+		// if (!Unflatten(fields)) return false;
+
+		int start = 0, end = 0;
+		var found = false;
+		
+		for (int i = 0; i < fields.Count - 1; i++)
+		{
+			var currentFieldPath = "";
+			var nextFieldPath = "";
+
+			int j = 0;
+			do
+			{
+				currentFieldPath = fields[i + j].Path;
+				nextFieldPath = fields[i + j + 1].Path;
+				j++;
+			} while (currentFieldPath == nextFieldPath && i + j < fields.Count - 1);
+
+			start = i;
+			end = i + j - 1;
+			
+			// Array (defined by field path) is longer than 1 element
+			if (j > 1)
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if (found)
+		{
+			Console.WriteLine($"Found array of {fields[start].Name} from {start} to {end} with length {end - start + 1}");
+			var fieldStart = fields[start];
+			fieldStart = fields[start];
+			fieldStart.Type = FieldType.Array;
+			fieldStart.Count = end - start + 1;
+			// fieldStart.Comment = 
+			fields.RemoveRange(start + 1, end - start);
+			
+			return false;
+		}
+
+		return true;
 	}
 }
