@@ -85,7 +85,10 @@ public static class PatchGrabber
 		var url = pUrl.AsSpan();
 		var fileName = Path.GetFileNameWithoutExtension(url);
 		var isHist = fileName.StartsWith("H");
+		var letter = fileName.ToArray().Last();
+		var isParted = char.IsLetter(letter) && char.IsLower(letter);
 		var length = fileName.Length - (isHist ? 1 : 0);
+		length -= isParted ? 1 : 0; 
 		var version = fileName[1.. length];
 		return GameVersion.Parse(new string(version));
 	}
