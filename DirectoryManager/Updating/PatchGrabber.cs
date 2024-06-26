@@ -46,6 +46,7 @@ public static class PatchGrabber
 		var patchFilesNeeded = new HashSet<string>();
 		foreach (var patchFile in patchFiles)
 		{
+			if (Path.GetFileNameWithoutExtension(patchFile).StartsWith("H")) continue;
 			var version = GetVersion(patchFile);
 
 			if (version <= ourVersion) continue;
