@@ -2,6 +2,8 @@
 
 public class GameVersion : IComparable
 {
+    public const int PatchVersionStringLength = 20;
+    
     public uint Year { get; set; }
     public uint Month { get; set; }
     public uint Day { get; set; }
