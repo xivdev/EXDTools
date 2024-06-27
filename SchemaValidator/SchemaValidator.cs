@@ -90,6 +90,7 @@ public class SchemaValidator
 			if (exh == null)
 			{
 				results.Add(ValidationResult.Error(sheetName, "SheetExistsValidator", "Schema exists but sheet does not!"));
+				continue;
 			}
 
 			Sheet sheet;
