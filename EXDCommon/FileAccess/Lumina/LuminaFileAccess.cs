@@ -1,4 +1,5 @@
-﻿using EXDCommon.Sheets;
+﻿using EXDCommon.FileAccess.Directory;
+using EXDCommon.Sheets;
 using Lumina;
 using Lumina.Data;
 using Lumina.Data.Files.Excel;
@@ -16,7 +17,7 @@ public class LuminaFileAccess : IGameFileAccess
 
 	public T? GetFile<T>(string path, string? origPath = null) where T : FileResource => _gameData.GetFile<T>(path);
 	public bool FileExists(string path) => _gameData.FileExists(path);
-	
+
 	public RawExcelSheet? GetRawExcelSheet(string sheetName, Language sheetLanguage = Language.English)
 	{
 		var path = $"exd/{sheetName}.exh";
@@ -31,5 +32,14 @@ public class LuminaFileAccess : IGameFileAccess
 		newSheet.GenerateFilePages();
 
 		return newSheet;
+	}
+	
+	public GameVersion GetVersion()
+	{
+		var gamePath = _gameData.DataPath.Parent;
+		var file = gamePath!.FullName + "\\ffxivgame.ver";
+		var text = File.ReadAllText(file);
+		var version = GameVersion.Parse(text);
+		return version;
 	}
 }

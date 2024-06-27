@@ -22,7 +22,7 @@ public class DirectoryFileAccess : IGameFileAccess
 
 	public T? GetFile<T>(string path, string? origPath = null) where T : FileResource
 	{
-		var sqpackFile = _directory.SqPackFiles[path];
+		if (!_directory.SqPackFiles.TryGetValue(path, out var sqpackFile)) return null;
 		var realPath = Path.Combine(_storagePath, sqpackFile.Hash[..2], sqpackFile.Hash);
 		
 		if(!File.Exists(realPath))
@@ -87,5 +87,10 @@ public class DirectoryFileAccess : IGameFileAccess
 		}
 
 		return _indexFiles[category].GetFileOffsetAndDat(path) != (0, 0);
+	}
+
+	public GameVersion GetVersion()
+	{
+		return _directory.Version;
 	}
 }
