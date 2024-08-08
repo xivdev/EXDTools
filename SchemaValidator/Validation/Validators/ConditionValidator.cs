@@ -24,7 +24,16 @@ public class ConditionValidator : Validator
 		{
 			var offset = field.Definition.Offset;
 			var switchOn = field.Field.Condition.Switch;
-			var switchField = fields.First(f => f.Field.Name == switchOn);
+			var switchFields = fields.Where(f => f.Field.Name == switchOn).ToList();
+			
+			if (!switchFields.Any())
+			{
+				var msg = $"Column {field.Field.Name}@0x{offset:X} type {field.Definition.Type} has switch {switchOn} but no field by that name was found.";
+				results.Results.Add(ValidationResult.Failed(sheet.Name, ValidatorName(), msg));
+				continue;
+			}
+
+			var switchField = switchFields[0];
 			var definedSwitchColumnValues = field.Field.Condition.Cases.Keys.ToHashSet();
 			var switchColumnValues = new HashSet<long>();
 			
