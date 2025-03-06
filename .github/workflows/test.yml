@@ -43,6 +43,11 @@ jobs:
           output-path: data
           regex: '^sqpack\/ffxiv\/0a0000\..+$'
       
+      - name: Export Columns
+        id: export-columns
+        if: always()
+        run: dotnet run -c Release --no-build -- export-columns -g data/sqpack -o columns.yml
+      
       - name: Export Hashes
         id: export-hashes
         if: always()
@@ -57,6 +62,15 @@ jobs:
         id: validate-schema
         if: always()
         run: dotnet run -c Release --no-build -- validate -g data/sqpack -s EXDSchema
+      
+      - name: Upload Columns
+        uses: actions/upload-artifact@v4
+        if: ${{ steps.export-columns.conclusion == 'success' }}
+        continue-on-error: true
+        with:
+          name: columns
+          path: columns.yml
+          if-no-files-found: error
       
       - name: Upload Hashes
         uses: actions/upload-artifact@v4

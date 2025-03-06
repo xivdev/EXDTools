@@ -71,5 +71,4 @@ jobs:
         with: 
           files: |
             linux/EXDTooler
-            linux/EXDTooler.pdb
             windows/EXDTooler.exe
