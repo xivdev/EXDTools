@@ -1,10 +1,9 @@
 using EXDTooler.Schema;
-using Lumina;
-using Lumina.Data.Files.Excel;
+using Lumina.Data.Structs.Excel;
 
 namespace EXDTooler.Validators;
 
 public interface IValidator<T> where T : IValidator<T>
 {
-    abstract static void Validate(Sheet sheet, ExcelHeaderFile header, GameData data);
+    abstract static void Validate(Sheet sheet, IReadOnlyList<ExcelColumnDefinition> cols, ColDefReader colDefs);
 }

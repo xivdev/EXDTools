@@ -1,6 +1,5 @@
 using EXDTooler.Schema;
-using Lumina;
-using Lumina.Data.Files.Excel;
+using Lumina.Data.Structs.Excel;
 
 namespace EXDTooler.Validators;
 
@@ -8,7 +7,7 @@ public sealed class Relations : IValidator<Relations>
 {
     private Relations() { }
 
-    public static void Validate(Sheet sheet, ExcelHeaderFile header, GameData data) =>
+    public static void Validate(Sheet sheet, IReadOnlyList<ExcelColumnDefinition> cols, ColDefReader colDefs) =>
         ValidateFields(sheet.Fields, sheet.Relations?.Values);
 
     private static void ValidateFields(IEnumerable<Field> fields, IEnumerable<List<string>>? relations)

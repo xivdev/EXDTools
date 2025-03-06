@@ -1,7 +1,6 @@
 using EXDTooler.Schema;
 using EXDTooler.Validators;
-using Lumina;
-using Lumina.Data.Files.Excel;
+using Lumina.Data.Structs.Excel;
 
 namespace EXDTooler.BreakingValidators;
 
@@ -9,7 +8,7 @@ public sealed class FieldNamesAndTypes : IBreakingValidator<FieldNamesAndTypes>
 {
     private FieldNamesAndTypes() { }
 
-    public static void Validate(Sheet baseSheet, Sheet newSheet, ExcelHeaderFile header, GameData data)
+    public static void Validate(Sheet baseSheet, Sheet newSheet, IReadOnlyList<ExcelColumnDefinition> cols, ColDefReader colDefs)
     {
         ValidateFields(baseSheet.Fields, newSheet.Fields);
         ValidateRelations(baseSheet.Relations, newSheet.Relations);

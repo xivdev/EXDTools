@@ -1,6 +1,5 @@
 using EXDTooler.Schema;
-using Lumina;
-using Lumina.Data.Files.Excel;
+using Lumina.Data.Structs.Excel;
 
 namespace EXDTooler.Validators;
 
@@ -8,7 +7,7 @@ public sealed class SheetRefs : IValidator<SheetRefs>
 {
     private SheetRefs() { }
 
-    public static void Validate(Sheet sheet, ExcelHeaderFile header, GameData data)
+    public static void Validate(Sheet sheet, IReadOnlyList<ExcelColumnDefinition> cols, ColDefReader colDefs)
     {
         HashSet<string> sheets = [];
         foreach (var f in sheet.Fields)
@@ -16,7 +15,7 @@ public sealed class SheetRefs : IValidator<SheetRefs>
 
         foreach (var sheetName in sheets)
         {
-            if (!data.FileExists($"exd/{sheetName}.exh"))
+            if (!colDefs.Sheets.ContainsKey(sheetName))
                 throw new ValidationException($"Sheet reference not found: {sheetName}");
         }
     }

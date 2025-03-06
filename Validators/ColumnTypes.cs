@@ -9,12 +9,12 @@ public sealed class ColumnTypes : IValidator<ColumnTypes>
 {
     private ColumnTypes() { }
 
-    public static void Validate(Sheet sheet, ExcelHeaderFile header, GameData data)
+    public static void Validate(Sheet sheet, IReadOnlyList<ExcelColumnDefinition> cols, ColDefReader colDefs)
     {
-        ReadOnlyMemory<ExcelColumnDefinition> cols = Utils.OrderByOffset(header.ColumnDefinitions);
+        ReadOnlyMemory<ExcelColumnDefinition> offsetCols = Utils.OrderByOffset(cols);
         foreach (var f in sheet.Fields)
-            ValidateColumns(f, ref cols);
-        if (!cols.IsEmpty)
+            ValidateColumns(f, ref offsetCols);
+        if (!offsetCols.IsEmpty)
             throw new ValidationException("Column count mismatch");
     }
 

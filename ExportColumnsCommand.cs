@@ -1,14 +1,11 @@
-using System.Collections.Immutable;
 using DotMake.CommandLine;
-using Lumina;
-using Lumina.Data.Files.Excel;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
 namespace EXDTooler;
 
 [CliCommand(Parent = typeof(MainCommand))]
-public sealed class ExportHashesCommand
+public sealed class ExportColumnsCommand
 {
     public required MainCommand Parent { get; set; }
 
@@ -25,28 +22,27 @@ public sealed class ExportHashesCommand
     {
         var token = Parent.Init();
 
-        var sheets = ColDefReader.FromInputs(GamePath, ColumnsFile);
-
         var schemaSerializer = new SerializerBuilder()
             .DisableAliases()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .WithEnumNamingConvention(LowerCaseNamingConvention.Instance)
             .WithIndentedSequences()
+            .EnsureRoundtrip()
             .Build();
 
-        var hashes = sheets.Sheets.Keys
-            .Select(name => KeyValuePair.Create(name, sheets.GetColumnsHash(name)))
-            .ToImmutableSortedDictionary();
+        var sheets = ColDefReader.FromInputs(GamePath, ColumnsFile);
 
         if (OutputPath != null)
         {
             using var f = File.OpenWrite(OutputPath);
             f.SetLength(0);
             using var writer = new StreamWriter(f);
-            schemaSerializer.Serialize(writer, hashes);
+            schemaSerializer.Serialize(writer, sheets.Sheets);
         }
         else
-            schemaSerializer.Serialize(Console.Out, hashes);
+            schemaSerializer.Serialize(Console.Out, sheets.Sheets);
+
+        Log.Info($"Hash: {sheets.HashString}");
         return Task.CompletedTask;
     }
 }

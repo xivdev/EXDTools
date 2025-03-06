@@ -1,7 +1,5 @@
 using System.Numerics;
 using EXDTooler.Schema;
-using Lumina;
-using Lumina.Data.Files.Excel;
 using Lumina.Data.Structs.Excel;
 
 namespace EXDTooler.Validators;
@@ -10,8 +8,8 @@ public sealed class LinkConditionType : IValidator<LinkConditionType>
 {
     private LinkConditionType() { }
 
-    public static void Validate(Sheet sheet, ExcelHeaderFile header, GameData data) =>
-        ValidateFields(sheet.Fields, Utils.OrderByOffset(header.ColumnDefinitions));
+    public static void Validate(Sheet sheet, IReadOnlyList<ExcelColumnDefinition> cols, ColDefReader colDefs) =>
+        ValidateFields(sheet.Fields, Utils.OrderByOffset(cols));
 
     private static int GetColumnCount(Field field)
     {
