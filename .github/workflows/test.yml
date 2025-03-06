@@ -45,18 +45,18 @@ jobs:
       
       - name: Export Hashes
         id: export-hashes
-        continue-on-error: true
-        run: dotnet run --no-build -- export-hashes -g data/sqpack -o hashes.yml
+        if: always()
+        run: dotnet run -c Release --no-build -- export-hashes -g data/sqpack -o hashes.yml
       
       - name: Export Paths
         id: export-paths
-        continue-on-error: true
-        run: dotnet run --no-build -- export-paths -g data/sqpack -s EXDSchema -o paths
+        if: always()
+        run: dotnet run -c Release --no-build -- export-paths -g data/sqpack -s EXDSchema -o paths
       
       - name: Validate Schema
         id: validate-schema
-        continue-on-error: true
-        run: dotnet run --no-build -- validate -g data/sqpack -s EXDSchema
+        if: always()
+        run: dotnet run -c Release --no-build -- validate -g data/sqpack -s EXDSchema
       
       - name: Upload Hashes
         uses: actions/upload-artifact@v4
