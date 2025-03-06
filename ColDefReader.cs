@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Lumina;
@@ -9,9 +10,9 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace EXDTooler;
 
-public sealed class ColDefReader(IDictionary<string, List<ExcelColumnDefinition>> dict)
+public sealed class ColDefReader(ImmutableSortedDictionary<string, List<ExcelColumnDefinition>> dict)
 {
-    public OrderedDictionary<string, List<ExcelColumnDefinition>> Sheets { get; } = new(dict);
+    public ImmutableSortedDictionary<string, List<ExcelColumnDefinition>> Sheets { get; } = dict;
 
     private byte[]? hash;
     public byte[] Hash => hash ??= CalcHash();
@@ -32,7 +33,7 @@ public sealed class ColDefReader(IDictionary<string, List<ExcelColumnDefinition>
 
         using var f = File.OpenText(file);
         var sheets = deserializer.Deserialize<Dictionary<string, List<ExcelColumnDefinition>>>(f);
-        return new(sheets);
+        return new(sheets.ToImmutableSortedDictionary());
     }
 
     public static ColDefReader FromGameData(string gamePath)
@@ -48,12 +49,25 @@ public sealed class ColDefReader(IDictionary<string, List<ExcelColumnDefinition>
                 .Where(p => !p.Contains('/'))
                 .Select(sheetName => (sheetName, gameData.GetFile<ExcelHeaderFile>($"exd/{sheetName}.exh")!))
                 .Select(pair => KeyValuePair.Create(pair.sheetName, pair.Item2.ColumnDefinitions.ToList()))
-                .ToDictionary()
+                .ToImmutableSortedDictionary()
         );
     }
 
     public uint GetColumnsHash(string sheetName) =>
         Crc32.Get(MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(Sheets[sheetName])));
+
+    public void WriteTo(TextWriter writer)
+    {
+        var schemaSerializer = new SerializerBuilder()
+            .DisableAliases()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .WithEnumNamingConvention(LowerCaseNamingConvention.Instance)
+            .WithIndentedSequences()
+            .EnsureRoundtrip()
+            .Build();
+
+        schemaSerializer.Serialize(writer, Sheets);
+    }
 
     private byte[] CalcHash()
     {

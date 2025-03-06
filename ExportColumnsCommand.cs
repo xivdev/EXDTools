@@ -1,6 +1,4 @@
 using DotMake.CommandLine;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace EXDTooler;
 
@@ -22,14 +20,6 @@ public sealed class ExportColumnsCommand
     {
         var token = Parent.Init();
 
-        var schemaSerializer = new SerializerBuilder()
-            .DisableAliases()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .WithEnumNamingConvention(LowerCaseNamingConvention.Instance)
-            .WithIndentedSequences()
-            .EnsureRoundtrip()
-            .Build();
-
         var sheets = ColDefReader.FromInputs(GamePath, ColumnsFile);
 
         if (OutputPath != null)
@@ -37,10 +27,10 @@ public sealed class ExportColumnsCommand
             using var f = File.OpenWrite(OutputPath);
             f.SetLength(0);
             using var writer = new StreamWriter(f);
-            schemaSerializer.Serialize(writer, sheets.Sheets);
+            sheets.WriteTo(writer);
         }
         else
-            schemaSerializer.Serialize(Console.Out, sheets.Sheets);
+            sheets.WriteTo(Console.Out);
 
         Log.Info($"Hash: {sheets.HashString}");
         return Task.CompletedTask;
