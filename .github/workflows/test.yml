@@ -2,8 +2,8 @@ name: Test
 on: push
 
 jobs:
-  build:
-    name: Build
+  test:
+    name: Build and Test
     runs-on: ubuntu-latest
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: true
@@ -37,7 +37,7 @@ jobs:
           path: data
           key: exd
       
-      - name: Download Exd
+      - name: Download Game Data
         uses: WorkingRobot/ffxiv-downloader@v2
         with:
           output-path: data
@@ -63,7 +63,7 @@ jobs:
         if: ${{ steps.export-hashes.conclusion == 'success' }}
         continue-on-error: true
         with:
-          name: hashes.yml
+          name: hashes
           path: hashes.yml
           if-no-files-found: error
 
