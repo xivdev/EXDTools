@@ -58,16 +58,18 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-linux
+          path: linux
     
       - name: Download Windows Build
         uses: actions/download-artifact@v4
         with:
           name: build-windows
+          path: windows
       
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with: 
           files: |
-            build-linux/EXDTooler
-            build-linux/EXDTooler.pdb
-            build-windows/EXDTooler.exe
+            linux/EXDTooler
+            linux/EXDTooler.pdb
+            windows/EXDTooler.exe
