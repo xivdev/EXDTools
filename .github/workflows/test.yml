@@ -1,0 +1,77 @@
+name: Test
+on: push
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Checkout EXDSchema
+        uses: actions/checkout@v4
+        with:
+          repository: WorkingRobot/EXDSchema
+          ref: latest
+          submodules: recursive
+          path: EXDSchema
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0"
+
+      - name: Build
+        run: dotnet build -c Release
+
+      - name: Retrieve cache
+        id: exd-cache
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: exd
+      
+      - name: Download Exd
+        uses: WorkingRobot/ffxiv-downloader@v2
+        with:
+          output-path: data
+          regex: '^sqpack\/ffxiv\/0a0000\..+$'
+      
+      - name: Export Hashes
+        id: export-hashes
+        continue-on-error: true
+        run: dotnet run --no-build -- export-hashes -g data/sqpack -o hashes.yml
+      
+      - name: Export Paths
+        id: export-paths
+        continue-on-error: true
+        run: dotnet run --no-build -- export-paths -g data/sqpack -s EXDSchema -o paths
+      
+      - name: Validate Schema
+        id: validate-schema
+        continue-on-error: true
+        run: dotnet run --no-build -- validate -g data/sqpack -s EXDSchema
+      
+      - name: Upload Hashes
+        uses: actions/upload-artifact@v4
+        if: ${{ steps.export-hashes.conclusion == 'success' }}
+        continue-on-error: true
+        with:
+          name: hashes.yml
+          path: hashes.yml
+          if-no-files-found: error
+
+      - name: Upload Paths
+        uses: actions/upload-artifact@v4
+        if: ${{ steps.export-paths.conclusion == 'success' }}
+        continue-on-error: true
+        with:
+          name: paths
+          path: paths
+          if-no-files-found: error

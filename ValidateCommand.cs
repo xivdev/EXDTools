@@ -1,4 +1,6 @@
-using System.Text.Json;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text;
 using DotMake.CommandLine;
 using EXDTooler.BreakingValidators;
 using EXDTooler.Schema;
@@ -27,7 +29,7 @@ public sealed class ValidateCommand
     [CliOption(Required = false, Description = "Path to the base schema directory. Should be a folder with just .yml schemas. Used for ensuring no breaking changes occured.", ValidationRules = CliValidationRules.ExistingDirectory)]
     public string? BaseSchemaPath { get; set; }
 
-    [CliOption(Required = false, Description = "Path to schema.json", ValidationRules = CliValidationRules.ExistingFile)]
+    [CliOption(Required = false, Description = "Path to a schema.json. If omitted, the built-in one will be used.", ValidationRules = CliValidationRules.ExistingFile)]
     public string? JsonSchemaPath { get; set; }
 
     // [CliOption(Required = false, Description = "Path to sheetHashes.json file. Contains the hashes of all known sheets in the game in all versions.", ValidationRules = CliValidationRules.ExistingFile)]
@@ -36,7 +38,7 @@ public sealed class ValidateCommand
     [CliOption(Required = false, Description = "List of schema file paths to verify", Arity = CliArgumentArity.OneOrMore, ValidationRules = CliValidationRules.ExistingFile)]
     public string[]? FilesToVerify { get; set; }
 
-    public Task<int> RunAsync()
+    public async Task<int> RunAsync()
     {
         var token = Parent.Init();
 
@@ -53,18 +55,23 @@ public sealed class ValidateCommand
         //     sheetHashes = await JsonSerializer.DeserializeAsync<Dictionary<string, Dictionary<string, uint>>>(f).ConfigureAwait(false);
         // }
 
-        var schema = JsonSchemaPath != null ? JsonSchema.FromFile(JsonSchemaPath) : null;
+        JsonSchema schema;
+        if (JsonSchemaPath != null)
+            schema = JsonSchema.FromFile(JsonSchemaPath);
+        else
+        {
+            using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("EXDTooler.schema.json")!;
+            schema = await JsonSchema.FromStream(s).ConfigureAwait(false);
+        }
+
         var schemaOptions = new EvaluationOptions
         {
             ValidateAgainstMetaSchema = true,
             RequireFormatValidation = true,
-            OutputFormat = OutputFormat.Flag,
+            OutputFormat = OutputFormat.List,
             OnlyKnownFormats = true,
             AllowReferencesIntoUnknownKeywords = false,
         };
-        var schemaEvaluator = (YamlDocument d) => schema!.Evaluate(d.ToJsonNode(), schemaOptions);
-        if (schema == null)
-            schemaEvaluator = null;
 
         var schemaDeserializer = new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
 
@@ -84,20 +91,19 @@ public sealed class ValidateCommand
                 baseSheetFile = null;
             }
 
-            if (Validate(sheetFile, gameData, schemaDeserializer, schemaEvaluator, baseSheetFile))
+            if (Validate(sheetFile, gameData, schemaDeserializer, d => schema.Evaluate(d.ToJsonNode(), schemaOptions), baseSheetFile))
                 validatedFiles++;
 
             if ((idx & 3) == 0)
                 Log.VerboseProgress($"Verified {validatedFiles}/{idx + 1} files. ({(idx + 1) / (double)FilesToVerify.Length * 100:0.00}% done)");
         }
-        Log.VerboseClearLine();
-        Log.Verbose($"Verified {validatedFiles}/{FilesToVerify.Length} files. ({(FilesToVerify.Length == 0 ? 1 : (validatedFiles / (double)FilesToVerify.Length)) * 100:0.00}%)");
-        return Task.FromResult(validatedFiles == FilesToVerify.Length ? 0 : 1);
+        Log.VerboseProgressClear();
+        Log.Info($"Verified {validatedFiles}/{FilesToVerify.Length} files. ({(FilesToVerify.Length == 0 ? 1 : (validatedFiles / (double)FilesToVerify.Length)) * 100:0.00}%)");
+        return validatedFiles == FilesToVerify.Length ? 0 : 1;
     }
 
-    private static bool Validate(string sheetFile, GameData gameData, IDeserializer schemaDeserializer, Func<YamlDocument, EvaluationResults>? evaluateSchema, string? baseSheetFile)
+    private static bool Validate(string sheetFile, GameData gameData, IDeserializer schemaDeserializer, Func<YamlDocument, EvaluationResults> evaluateSchema, string? baseSheetFile)
     {
-        if (evaluateSchema != null)
         {
             using var f = File.OpenText(sheetFile);
             var yamlStream = new YamlStream();
@@ -110,10 +116,31 @@ public sealed class ValidateCommand
             var results = evaluateSchema(yamlStream.Documents[0]);
             if (!results.IsValid)
             {
-                Log.Error($"Failed to validate {sheetFile}: {results}");
+                Log.Error($"Failed to validate {sheetFile}.");
+                foreach (var result in results.Details)
+                {
+                    if (result.IsValid)
+                        continue;
+                    if (!result.HasErrors)
+                        continue;
+
+                    foreach (var error in result.Errors!.Values)
+                    {
+                        var s = new StringBuilder("  ");
+                        if (result.InstanceLocation.Count > 0)
+                            s.Append(result.InstanceLocation);
+                        else
+                            s.Append('/');
+                        s.Append(result.EvaluationPath);
+                        s.Append(": ");
+                        s.Append(error);
+                        Log.Error(s.ToString());
+                    }
+                }
                 return false;
             }
         }
+
         Sheet sheet;
         {
             using var f = File.OpenText(sheetFile);

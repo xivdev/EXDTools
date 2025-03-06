@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 
@@ -6,36 +7,56 @@ namespace EXDTooler;
 public static class Log
 {
     public static bool IsGHA;
+    private static bool IsOnProgressLine;
 
     static Log()
     {
         JsonOptions = new JsonSerializerOptions { WriteIndented = true, IncludeFields = true };
     }
 
-    public static void Error(Exception e)
+    private static void LogMessage(string logLevel, string message, TextWriter? writer = null)
     {
-        Console.Error.WriteLine($"[ERROR] {e}");
+        writer ??= Console.Out;
+        if (IsOnProgressLine)
+        {
+            writer.WriteLine();
+            IsOnProgressLine = false;
+        }
+        writer.WriteLine($"[{logLevel}] {message}");
     }
 
-    public static void Error(string message)
+    private static void LogProgress(string logLevel, string message, TextWriter? writer = null)
     {
-        Console.Error.WriteLine($"[ERROR] {message}");
+        if (IsGHA)
+            return;
+        writer ??= Console.Out;
+        writer.Write($"\r[{logLevel}] {message}");
+        IsOnProgressLine = true;
     }
 
-    public static void Warn(string message)
+    private static void LogProgressClear(TextWriter? writer = null)
     {
-        Console.WriteLine($"[WARN] {message}");
+        if (IsGHA)
+            return;
+        writer ??= Console.Out;
+        writer.Write("\r" + new string(' ', Console.BufferWidth) + "\r");
+        IsOnProgressLine = false;
     }
 
-    public static void Info(string message)
-    {
-        Console.WriteLine($"[INFO] {message}");
-    }
+    public static void Error(Exception e) =>
+        Error(e.ToString());
 
-    public static void Info()
-    {
+    public static void Error(string message) =>
+        LogMessage("ERROR", message, Console.Error);
+
+    public static void Warn(string message) =>
+        LogMessage("WARN", message);
+
+    public static void Info(string message) =>
+        LogMessage("INFO", message);
+
+    public static void Info() =>
         Info(string.Empty);
-    }
 
     //
 
@@ -43,30 +64,28 @@ public static class Log
     public static void Verbose(DefaultInterpolatedStringHandler message)
     {
         if (IsVerboseEnabled)
-            Console.WriteLine($"[VERBOSE] {message.ToStringAndClear()}");
+            Verbose(message.ToStringAndClear());
     }
 
     public static void Verbose(string message)
     {
         if (IsVerboseEnabled)
-            Console.WriteLine($"[VERBOSE] {message}");
+            LogMessage("VERBOSE", message);
     }
 
-    public static void Verbose()
-    {
+    public static void Verbose() =>
         Verbose(string.Empty);
-    }
 
     public static void VerboseProgress(DefaultInterpolatedStringHandler message)
     {
-        if (IsVerboseEnabled && !IsGHA)
-            Console.Write($"\r[VERBOSE] {message.ToStringAndClear()}");
+        if (IsVerboseEnabled)
+            LogProgress("VERBOSE", message.ToStringAndClear());
     }
 
-    public static void VerboseClearLine()
+    public static void VerboseProgressClear()
     {
-        if (IsVerboseEnabled && !IsGHA)
-            Console.Write("\r" + new string(' ', Console.BufferWidth) + "\r");
+        if (IsVerboseEnabled)
+            LogProgressClear();
     }
 
     //
@@ -75,19 +94,19 @@ public static class Log
     public static void Debug(DefaultInterpolatedStringHandler handler)
     {
         if (IsDebugEnabled)
-            Console.WriteLine($"[DEBUG] {handler.ToStringAndClear()}");
+            Debug(handler.ToStringAndClear());
     }
 
     public static void Debug(string message)
     {
         if (IsDebugEnabled)
-            Console.WriteLine($"[DEBUG] {message}");
+            LogMessage("DEBUG", message);
     }
 
     private static JsonSerializerOptions JsonOptions { get; }
     public static void DebugObject(object value)
     {
         if (IsDebugEnabled)
-            Console.WriteLine($"[DEBUG] {JsonSerializer.Serialize(value, JsonOptions)}");
+            LogMessage("DEBUG", JsonSerializer.Serialize(value, JsonOptions));
     }
 }

@@ -60,8 +60,8 @@ public sealed class ApplyCommand
             if ((idx & 3) == 0)
                 Log.VerboseProgress($"Applied {idx + 1}/{files.Length} files. ({(idx + 1) / (double)files.Length * 100:0.00}%)");
         }
-        Log.VerboseClearLine();
-        Log.Verbose($"Applied {files.Length}/{files.Length} files. ({1 * 100:0.00}%)");
+        Log.VerboseProgressClear();
+        Log.Info($"Applied {files.Length}/{files.Length} files. ({1 * 100:0.00}%)");
         return Task.CompletedTask;
     }
 

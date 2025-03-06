@@ -12,9 +12,6 @@ public sealed class ExportHashesCommand
 {
     public required MainCommand Parent { get; set; }
 
-    [CliOption(Required = true, Description = "Path to the schema directory. Should be a folder with just .yml schemas.", ValidationRules = CliValidationRules.ExistingDirectory)]
-    public required string SchemaPath { get; set; }
-
     [CliOption(Required = true, Description = "Path to the game directory. Should be the root of the game's repository.", ValidationRules = CliValidationRules.ExistingDirectory)]
     public required string GamePath { get; set; }
 
@@ -38,8 +35,6 @@ public sealed class ExportHashesCommand
             .WithEnumNamingConvention(LowerCaseNamingConvention.Instance)
             .WithIndentedSequences()
             .Build();
-
-        var files = Directory.EnumerateFiles(SchemaPath, "*.yml").ToArray();
 
         var hashes = gameData.Excel.SheetNames
             .Where(p => !p.Contains('/'))
