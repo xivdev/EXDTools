@@ -1,13 +1,10 @@
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
 using DotMake.CommandLine;
 using EXDTooler.BreakingValidators;
 using EXDTooler.Schema;
 using EXDTooler.Validators;
 using Json.Schema;
-using Lumina;
-using Lumina.Data.Files.Excel;
 using Lumina.Data.Structs.Excel;
 using Yaml2JsonNode;
 using YamlDotNet.RepresentationModel;
@@ -38,9 +35,6 @@ public sealed class ValidateCommand
 
     // [CliOption(Required = false, Description = "Path to sheetHashes.json file. Contains the hashes of all known sheets in the game in all versions.", ValidationRules = CliValidationRules.ExistingFile)]
     // public string? SheetHashesPath { get; set; }
-
-    [CliOption(Required = false, Description = "List of schema file paths to verify", Arity = CliArgumentArity.OneOrMore, ValidationRules = CliValidationRules.ExistingFile)]
-    public string[]? FilesToVerify { get; set; }
 
     public async Task<int> RunAsync()
     {
@@ -75,19 +69,34 @@ public sealed class ValidateCommand
 
         var schemaDeserializer = new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
 
-        if (FilesToVerify == null || FilesToVerify.Length == 0)
-            FilesToVerify = [.. Directory.EnumerateFiles(SchemaPath, "*.yml")];
-        else
-            FilesToVerify = [.. FilesToVerify.Select(f => Path.GetFullPath(f, SchemaPath))];
-        Log.Verbose($"Verifying {FilesToVerify.Length} files");
+        string[] filesToVerify = [.. Directory.EnumerateFiles(SchemaPath, "*.yml")];
+        var existingSchemas = filesToVerify.Select(f => Path.GetFileNameWithoutExtension(f));
+        var requiredSchemas = sheets.Sheets.Keys;
+
+        var missingSchemas = requiredSchemas.Except(existingSchemas);
+        var extraSchemas = existingSchemas.Except(requiredSchemas);
+
+        if (missingSchemas.Any())
+        {
+            foreach (var missingSchema in missingSchemas)
+                Log.AnnotatedError($"Missing Schema: {missingSchema}");
+        }
+
+        if (extraSchemas.Any())
+        {
+            foreach (var extraSchema in extraSchemas)
+                Log.AnnotatedError($"Redundant Schema: {extraSchema}", new() { File = $"{extraSchema}.yml" });
+        }
+
+        Log.Verbose($"Verifying {filesToVerify.Length} files");
 
         var validatedFiles = 0;
-        foreach (var (idx, sheetFile) in FilesToVerify.Index())
+        foreach (var (idx, sheetFile) in filesToVerify.Index())
         {
             var baseSheetFile = BaseSchemaPath == null ? null : Path.Combine(BaseSchemaPath, Path.GetRelativePath(SchemaPath, sheetFile));
             if (BaseSchemaPath != null && !File.Exists(baseSheetFile))
             {
-                Log.Warn($"Cannot verify {Path.GetFileNameWithoutExtension(sheetFile)} for breaking changes. {baseSheetFile} does not exist.");
+                Log.AnnotatedWarn("Cannot verify sheet for breaking changes. Base sheet does not exist.", new() { File = Path.GetFileName(sheetFile) });
                 baseSheetFile = null;
             }
 
@@ -95,11 +104,63 @@ public sealed class ValidateCommand
                 validatedFiles++;
 
             if ((idx & 3) == 0)
-                Log.VerboseProgress($"Verified {validatedFiles}/{idx + 1} files. ({(idx + 1) / (double)FilesToVerify.Length * 100:0.00}% done)");
+                Log.VerboseProgress($"Verified {validatedFiles}/{idx + 1} files. ({(idx + 1) / (double)filesToVerify.Length * 100:0.00}% done)");
         }
         Log.VerboseProgressClear();
-        Log.Info($"Verified {validatedFiles}/{FilesToVerify.Length} files. ({(FilesToVerify.Length == 0 ? 1 : (validatedFiles / (double)FilesToVerify.Length)) * 100:0.00}%)");
-        return validatedFiles == FilesToVerify.Length ? 0 : 1;
+        Log.Info($"Verified {validatedFiles}/{filesToVerify.Length} files. ({(filesToVerify.Length == 0 ? 1 : (validatedFiles / (double)filesToVerify.Length)) * 100:0.00}%)");
+
+        var failed = missingSchemas.Any() || extraSchemas.Any() || validatedFiles != filesToVerify.Length;
+
+        var summary = CreateSummary(failed);
+        Log.Output("summary", summary);
+
+        return failed ? 1 : 0;
+    }
+
+    private static string CreateSummary(bool failed)
+    {
+        var s = new StringBuilder();
+
+        s.AppendLine("# Build Summary");
+        if (failed)
+            s.AppendLine("## ❌ Build failed");
+        else
+            s.AppendLine("## ✅ Build succeeded");
+        s.AppendLine();
+
+        foreach (var group in Log.Annotations.GroupBy(a => Path.GetFileNameWithoutExtension(a.Item3?.File)).OrderBy(a => a.Key))
+        {
+            s.AppendLine($"## {group.Key ?? "Untagged"}");
+            s.AppendLine();
+            foreach (var note in group.OrderBy(a => a.Item1))
+            {
+                var prefix = note.Item1 switch
+                {
+                    Log.LogLevel.Error => "❌",
+                    Log.LogLevel.Warn => "⚠️",
+                    Log.LogLevel.Info => "💬",
+                    Log.LogLevel.Verbose => "💭",
+                    Log.LogLevel.Debug => "📝",
+                    _ => "❓",
+                };
+
+                var title = note.Item3?.Title ?? note.Item2;
+                var text = note.Item3.HasValue ? note.Item2 : null;
+
+                s.Append(prefix);
+                s.Append(' ');
+                s.Append($"**{title}**");
+                if (text != null)
+                {
+                    s.Append(' ');
+                    s.Append(text);
+                }
+                s.AppendLine();
+            }
+            s.AppendLine();
+        }
+
+        return s.ToString();
     }
 
     private static bool Validate(string sheetFile, ColDefReader colDefs, IDeserializer schemaDeserializer, Func<YamlDocument, EvaluationResults> evaluateSchema, string? baseSheetFile)
@@ -110,13 +171,12 @@ public sealed class ValidateCommand
             yamlStream.Load(f);
             if (yamlStream.Documents.Count > 1)
             {
-                Log.Error($"Multiple documents in {sheetFile} (??)");
+                Log.AnnotatedError("Multiple YAML documents in file", new() { File = Path.GetFileName(sheetFile) });
                 return false;
             }
             var results = evaluateSchema(yamlStream.Documents[0]);
             if (!results.IsValid)
             {
-                Log.Error($"Failed to validate {sheetFile}.");
                 foreach (var result in results.Details)
                 {
                     if (result.IsValid)
@@ -126,15 +186,13 @@ public sealed class ValidateCommand
 
                     foreach (var error in result.Errors!.Values)
                     {
-                        var s = new StringBuilder("  ");
+                        var s = new StringBuilder("Schema Error at ");
                         if (result.InstanceLocation.Count > 0)
                             s.Append(result.InstanceLocation);
                         else
                             s.Append('/');
                         s.Append(result.EvaluationPath);
-                        s.Append(": ");
-                        s.Append(error);
-                        Log.Error(s.ToString());
+                        Log.AnnotatedError(error, new() { Title = s.ToString(), File = Path.GetFileName(sheetFile) });
                     }
                 }
                 return false;
@@ -148,45 +206,45 @@ public sealed class ValidateCommand
         }
         if (sheet == null)
         {
-            Log.Error($"Failed to deserialize {sheetFile}");
+            Log.AnnotatedError("Failed to deserialize", new() { File = Path.GetFileName(sheetFile) });
             return false;
         }
 
         if (Path.GetFileNameWithoutExtension(sheet.Name) != sheet.Name)
         {
-            Log.Error($"Sheet {sheetFile} does not match its file name");
+            Log.AnnotatedError($"Sheet name ({sheet.Name}) does not match file name", new() { File = Path.GetFileName(sheetFile) });
             return false;
         }
 
         if (!colDefs.Sheets.TryGetValue(sheet.Name, out var cols))
         {
-            Log.Error($"Failed to load {sheet.Name}.exh");
+            Log.AnnotatedError("Failed to load columns", new() { File = Path.GetFileName(sheetFile) });
             return false;
         }
 
         bool[] checks = [
-                Validate<ColumnCount>(sheet, cols, colDefs),
-                Validate<ColumnTypes>(sheet, cols, colDefs),
-                Validate<DisplayField>(sheet, cols, colDefs),
-                Validate<LinkConditionType>(sheet, cols, colDefs),
-                Validate<LinkSwitchField>(sheet, cols, colDefs),
-                Validate<Relations>(sheet, cols, colDefs),
-                Validate<SheetRefs>(sheet, cols, colDefs),
-            ];
+            Validate<ColumnCount>(sheet, cols, colDefs),
+            Validate<ColumnTypes>(sheet, cols, colDefs),
+            Validate<DisplayField>(sheet, cols, colDefs),
+            Validate<LinkConditionType>(sheet, cols, colDefs),
+            Validate<LinkSwitchField>(sheet, cols, colDefs),
+            Validate<Relations>(sheet, cols, colDefs),
+            Validate<SheetRefs>(sheet, cols, colDefs),
+        ];
 
         var pendingChecks = checks;
         if (sheet.PendingFields != null)
         {
             sheet.Fields = sheet.PendingFields;
             pendingChecks = [
-                Validate<ColumnCount>(sheet, cols, colDefs),
-                    Validate<ColumnTypes>(sheet, cols, colDefs),
-                    true,
-                    Validate<LinkConditionType>(sheet, cols, colDefs),
-                    Validate<LinkSwitchField>(sheet, cols, colDefs),
-                    Validate<Relations>(sheet, cols, colDefs),
-                    Validate<SheetRefs>(sheet, cols, colDefs),
-                ];
+                Validate<ColumnCount>(sheet, cols, colDefs, true),
+                Validate<ColumnTypes>(sheet, cols, colDefs, true),
+                true,
+                Validate<LinkConditionType>(sheet, cols, colDefs, true),
+                Validate<LinkSwitchField>(sheet, cols, colDefs, true),
+                Validate<Relations>(sheet, cols, colDefs, true),
+                Validate<SheetRefs>(sheet, cols, colDefs, true),
+            ];
         }
 
         if (checks.Any(x => !x) || pendingChecks.Any(x => !x))
@@ -210,7 +268,7 @@ public sealed class ValidateCommand
         return true;
     }
 
-    private static bool Validate<T>(Sheet sheet, List<ExcelColumnDefinition> cols, ColDefReader colDefs) where T : IValidator<T>
+    private static bool Validate<T>(Sheet sheet, List<ExcelColumnDefinition> cols, ColDefReader colDefs, bool pending = false) where T : IValidator<T>
     {
         try
         {
@@ -219,7 +277,7 @@ public sealed class ValidateCommand
         }
         catch (Exception ex)
         {
-            Log.Error($"Failed to validate {sheet.Name} with {typeof(T).Name}: {ex.Message}");
+            Log.AnnotatedError(ex.Message, new() { Title = $"Failed to validate{(pending ? " pending fields with" : string.Empty)} {typeof(T).Name}", File = $"{sheet.Name}.yml" });
             return false;
         }
     }
@@ -233,7 +291,7 @@ public sealed class ValidateCommand
         }
         catch (Exception ex)
         {
-            Log.Error($"Failed to validate breaking changes {newSheet.Name} with {typeof(T).Name}: {ex.Message}");
+            Log.AnnotatedError(ex.Message, new() { Title = $"Failed to validate breaking changes {typeof(T).Name}", File = $"{newSheet.Name}.yml" });
             return false;
         }
     }
