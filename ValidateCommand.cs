@@ -33,21 +33,11 @@ public sealed class ValidateCommand
     [CliOption(Required = false, Description = "Path to a schema.json. If omitted, the built-in one will be used.", ValidationRules = CliValidationRules.ExistingFile)]
     public string? JsonSchemaPath { get; set; }
 
-    // [CliOption(Required = false, Description = "Path to sheetHashes.json file. Contains the hashes of all known sheets in the game in all versions.", ValidationRules = CliValidationRules.ExistingFile)]
-    // public string? SheetHashesPath { get; set; }
-
     public async Task<int> RunAsync()
     {
         var token = Parent.Init();
 
         var sheets = ColDefReader.FromInputs(GamePath, ColumnsFile);
-
-        // Dictionary<string, Dictionary<string, uint>>? sheetHashes = null;
-        // if (SheetHashesPath is not null)
-        // {
-        //     using var f = File.OpenRead(SheetHashesPath);
-        //     sheetHashes = await JsonSerializer.DeserializeAsync<Dictionary<string, Dictionary<string, uint>>>(f).ConfigureAwait(false);
-        // }
 
         JsonSchema schema;
         if (JsonSchemaPath != null)
@@ -248,15 +238,15 @@ public sealed class ValidateCommand
         var pendingChecks = checks;
         if (sheet.PendingFields != null)
         {
-            sheet.Fields = sheet.PendingFields;
+            var pendingSheet = sheet with { Fields = sheet.PendingFields };
             pendingChecks = [
-                Validate<ColumnCount>(sheet, cols, colDefs, true),
-                Validate<ColumnTypes>(sheet, cols, colDefs, true),
+                Validate<ColumnCount>(pendingSheet, cols, colDefs, true),
+                Validate<ColumnTypes>(pendingSheet, cols, colDefs, true),
                 true,
-                Validate<LinkConditionType>(sheet, cols, colDefs, true),
-                Validate<LinkSwitchField>(sheet, cols, colDefs, true),
-                Validate<Relations>(sheet, cols, colDefs, true),
-                Validate<SheetRefs>(sheet, cols, colDefs, true),
+                Validate<LinkConditionType>(pendingSheet, cols, colDefs, true),
+                Validate<LinkSwitchField>(pendingSheet, cols, colDefs, true),
+                Validate<Relations>(pendingSheet, cols, colDefs, true),
+                Validate<SheetRefs>(pendingSheet, cols, colDefs, true),
             ];
         }
 
