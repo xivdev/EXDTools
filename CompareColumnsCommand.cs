@@ -7,14 +7,17 @@ public sealed class CompareColumnsCommand
 {
     public required MainCommand Parent { get; set; }
 
-    [CliOption(Required = true, Description = "Path to a directory with columns yaml files.", ValidationRules = CliValidationRules.ExistingDirectory)]
-    public required string ColumnsPath { get; set; }
+    [CliOption(Required = true, Description = "Path to base directory with folders.", ValidationRules = CliValidationRules.ExistingDirectory)]
+    public required string BasePath { get; set; }
+
+    [CliOption(Required = false, Description = "Path to columns.yml file within a BasePath subfolder.")]
+    public string ColumnsPath { get; set; } = ".github/columns.yml";
 
     public Task RunAsync()
     {
         var token = Parent.Init();
 
-        var files = Directory.GetFiles(ColumnsPath, "*.yml").Select(f => (Version: Path.GetFileNameWithoutExtension(f), Path: f)).OrderBy(f => f.Version).ToArray();
+        var files = Directory.GetDirectories(BasePath).Select(p => (Version: Path.GetFileName(p), Path: Path.Combine(p, ColumnsPath))).OrderBy(f => f.Version).ToArray();
 
         ColDefReader? baseSheets = null;
         foreach (var file in files)
