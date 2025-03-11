@@ -192,7 +192,11 @@ public sealed class ValidateCommand
                         else
                             s.Append('/');
                         s.Append(result.EvaluationPath);
-                        Log.AnnotatedError(error, new() { Title = s.ToString(), File = Path.GetFileName(sheetFile) });
+                        var isInfo = result.EvaluationPath.Contains("allOf");
+                        if (isInfo)
+                            Log.AnnotatedInfo(error, new() { Title = s.ToString(), File = Path.GetFileName(sheetFile) });
+                        else
+                            Log.AnnotatedError(error, new() { Title = s.ToString(), File = Path.GetFileName(sheetFile) });
                     }
                 }
                 return false;
