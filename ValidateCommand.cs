@@ -121,42 +121,51 @@ public sealed class ValidateCommand
     {
         var s = new StringBuilder();
 
-        s.AppendLine("# Build Summary");
         if (failed)
-            s.AppendLine("## ❌ Build failed");
+            s.AppendLine("## ❌ Validation failed");
         else
-            s.AppendLine("## ✅ Build succeeded");
+            s.AppendLine("## ✅ Validation succeeded");
         s.AppendLine();
 
         foreach (var group in Log.Annotations.GroupBy(a => Path.GetFileNameWithoutExtension(a.Item3?.File)).OrderBy(a => a.Key))
         {
             s.AppendLine($"## {group.Key ?? "Untagged"}");
             s.AppendLine();
-            foreach (var note in group.OrderBy(a => a.Item1))
+            foreach (var level in group.GroupBy(a => a.Item1).OrderBy(a => a.Key))
             {
-                var prefix = note.Item1 switch
+                s.AppendLine("<details>");
+                s.AppendLine();
+
+                s.Append("<summary><h3>");
+                var name = level.Key switch
                 {
-                    Log.LogLevel.Error => "❌",
-                    Log.LogLevel.Warn => "⚠️",
-                    Log.LogLevel.Info => "💬",
-                    Log.LogLevel.Verbose => "💭",
-                    Log.LogLevel.Debug => "📝",
-                    _ => "❓",
+                    Log.LogLevel.Error => "❌ Errors",
+                    Log.LogLevel.Warn => "⚠️ Warnings",
+                    Log.LogLevel.Info => "💬 Info",
+                    Log.LogLevel.Verbose => "💭 Verbose",
+                    Log.LogLevel.Debug => "📝 Debug",
+                    _ => "❓ Unknown",
                 };
+                s.Append(name);
+                s.AppendLine("</h3></summary>");
+                s.AppendLine();
 
-                var title = note.Item3?.Title ?? note.Item2;
-                var text = note.Item3.HasValue ? note.Item2 : null;
-
-                s.Append(prefix);
-                s.Append(' ');
-                s.Append($"**{title}**");
-                if (text != null)
+                foreach (var note in group)
                 {
-                    s.Append(' ');
-                    s.Append(text);
+                    var title = note.Item3?.Title ?? note.Item2;
+                    var text = note.Item3.HasValue ? note.Item2 : null;
+
+                    s.AppendLine($"**{title}**");
+                    if (text != null)
+                        s.AppendLine(text);
+                    s.AppendLine();
                 }
+
+                s.AppendLine();
+                s.AppendLine("</details>");
                 s.AppendLine();
             }
+
             s.AppendLine();
         }
 
@@ -186,7 +195,7 @@ public sealed class ValidateCommand
 
                     foreach (var error in result.Errors!.Values)
                     {
-                        var s = new StringBuilder("Schema Error at ");
+                        var s = new StringBuilder("Schema: ");
                         if (result.InstanceLocation.Count > 0)
                             s.Append(result.InstanceLocation);
                         else
@@ -281,7 +290,7 @@ public sealed class ValidateCommand
         }
         catch (Exception ex)
         {
-            Log.AnnotatedError(ex.Message, new() { Title = $"Failed to validate{(pending ? " pending fields with" : string.Empty)} {typeof(T).Name}", File = $"{sheet.Name}.yml" });
+            Log.AnnotatedError($"{typeof(T).Name}: {ex.Message}", new() { Title = $"Failed to validate{(pending ? " pending fields" : string.Empty)}", File = $"{sheet.Name}.yml" });
             return false;
         }
     }
@@ -295,7 +304,7 @@ public sealed class ValidateCommand
         }
         catch (Exception ex)
         {
-            Log.AnnotatedError(ex.Message, new() { Title = $"Failed to validate breaking changes {typeof(T).Name}", File = $"{newSheet.Name}.yml" });
+            Log.AnnotatedError(ex.Message, new() { Title = $"Failed to validate breaking changes", File = $"{newSheet.Name}.yml" });
             return false;
         }
     }
