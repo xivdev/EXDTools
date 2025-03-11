@@ -58,8 +58,8 @@ public static class Log
         var writer = logLevel.GetWriter();
         if (IsOnProgressLine)
         {
-            writer.WriteLine();
             IsOnProgressLine = false;
+            writer.WriteLine();
         }
         writer.WriteLine($"[{logLevel.GetName()}] {message}");
     }
@@ -91,6 +91,11 @@ public static class Log
         else
         {
             var writer = logLevel.GetWriter();
+            if (IsOnProgressLine)
+            {
+                IsOnProgressLine = false;
+                writer.WriteLine();
+            }
             writer.WriteLine($"[{logLevel.GetName()}]{(metadata ?? new()).FormatPlain(message)}");
         }
     }
