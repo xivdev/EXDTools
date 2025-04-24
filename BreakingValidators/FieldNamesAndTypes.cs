@@ -16,9 +16,6 @@ public sealed class FieldNamesAndTypes : IBreakingValidator<FieldNamesAndTypes>
 
     private static void ValidateFields(List<Field> baseFields, List<Field> newFields)
     {
-        if (baseFields.Count != newFields.Count)
-            throw new ValidationException("Field count mismatch");
-
         foreach (var field in baseFields)
         {
             var newField = newFields.FirstOrDefault(x => x.Name == field.Name);
@@ -50,6 +47,9 @@ public sealed class FieldNamesAndTypes : IBreakingValidator<FieldNamesAndTypes>
                     throw new ValidationException($"Field '{field.Name}' cannot remove targets ({string.Join(", ", targetList)})");
             }
         }
+        
+        if (baseFields.Count != newFields.Count)
+            throw new ValidationException("Field count mismatch");
     }
 
     private static void ValidateRelations(Dictionary<string, List<string>>? baseRelations, Dictionary<string, List<string>>? newRelations)
