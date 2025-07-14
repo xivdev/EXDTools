@@ -35,10 +35,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: data
-          key: exd
+          key: exd-${{hashFiles('data/.cachemeta.json')}}
+          restore-keys: |
+            exd-
       
       - name: Download Game Data
-        uses: WorkingRobot/ffxiv-downloader@v2
+        uses: WorkingRobot/ffxiv-downloader@v5
         with:
           output-path: data
           regex: '^sqpack\/ffxiv\/0a0000\..+$'
