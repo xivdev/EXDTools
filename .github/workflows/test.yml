@@ -17,7 +17,7 @@ jobs:
       - name: Checkout EXDSchema
         uses: actions/checkout@v4
         with:
-          repository: WorkingRobot/EXDSchema
+          repository: xivdev/EXDSchema
           ref: latest
           submodules: recursive
           path: EXDSchema
