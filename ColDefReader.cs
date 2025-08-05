@@ -1,5 +1,8 @@
+using System.Buffers.Binary;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using System.Security.Cryptography;
 using Lumina;
 using Lumina.Data.Files.Excel;
@@ -76,8 +79,21 @@ public sealed class ColDefReader(ImmutableSortedDictionary<string, ExcelColumnDe
 
     public ExcelColumnDefinition[] this[string sheetName] => Sheets[sheetName];
 
-    public uint GetColumnsHash(string sheetName) =>
-        Crc32.Get(MemoryMarshal.AsBytes(Sheets[sheetName].AsSpan()));
+    public uint GetColumnsHash(string sheetName)
+    {
+        var data = MemoryMarshal.Cast<ExcelColumnDefinition, ushort>(Sheets[sheetName].AsSpan());
+
+        // Column hashes are based on the file data, so we need to ensure the endianness matches
+        if (BitConverter.IsLittleEndian)
+        {
+            var temp = data.ToArray();
+            foreach (ref var el in temp.AsSpan())
+                el = BinaryPrimitives.ReverseEndianness(el);
+            data = temp.AsSpan();
+        }
+
+        return Crc32.Get(MemoryMarshal.Cast<ushort, byte>(data));
+    }
 
     public void WriteTo(TextWriter writer)
     {
