@@ -23,10 +23,11 @@ public sealed class MergeColumnsCommand
         Dictionary<(string Sheet, uint Hash), string> latestFiles = [];
         foreach (var file in files)
         {
-            var sheets = ColDefReader.FromColumnFile(file.Path);
-
             Log.Info($"Version: {file.Version}");
+
+            var sheets = ColDefReader.FromColumnFile(file.Path);
             Log.Info($"Hash: {sheets.HashString}");
+
 
             foreach (var sheet in sheets.Sheets)
             {
