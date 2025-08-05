@@ -1,12 +1,8 @@
-import sys
-
 from pathlib import Path
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.comments import CommentedSeq
 from ruamel.yaml.compat import StringIO
-
-APPLY_PENDING = sys.argv[1] == 'true'
 
 class MyYAML(YAML):
     def dump(self, data, stream=None, **kw):
@@ -65,24 +61,6 @@ def apply_flow_style(data):
             data.ca.items['targets'] = comment
     return data
 
-def apply_names(data):
-    if APPLY_PENDING:
-        if 'pendingName' in data:
-            comment = data.ca.items.get('pendingName', None)
-            data['name'] = data.pop('pendingName')
-            if comment:
-                data.ca.items['name'] = comment
-    return data
-
-def apply_changes(data):
-    if APPLY_PENDING:
-        if 'pendingFields' in data:
-            comment = data.ca.items.get('pendingFields', None)
-            data['fields'] = data.pop('pendingFields')
-            if comment:
-                data.ca.items['fields'] = comment
-    return data
-
 yaml = MyYAML()
 yaml.preserve_quotes = True
 yaml.width = 4096
@@ -92,27 +70,16 @@ for path in sorted(list(Path('./schemas').glob('*/*.yml')), key = lambda p: p.st
     inp = path.read_text().strip()
     data = yaml.load(path)
 
-    data = order_keys(data, ['name', 'displayField', 'fields', 'pendingFields', 'relations'])
-    data = apply_changes(data)
+    data = order_keys(data, ['name', 'displayField', 'fields' 'relations'])
 
     ret = []
     for fld in data['fields']:
-        ret.append(recurse(fld, lambda f: order_keys(f, ['name', 'pendingName', 'comment', 'type', 'count', 'fields']), apply_flow_style, apply_names))
+        ret.append(recurse(fld, lambda f: order_keys(f, ['name', 'comment', 'type', 'count', 'fields']), apply_flow_style, apply_names))
     if len(ret) != 0:
         comment = data.ca.items.get('fields', None)
         data['fields'] = ret
         if comment:
             data.ca.items['fields'] = comment
-
-    if 'pendingFields' in data:
-        ret = []
-        for fld in data['pendingFields']:
-            ret.append(recurse(fld, lambda f: order_keys(f, ['name', 'pendingName', 'type', 'count', 'fields']), apply_flow_style, apply_names))
-        if len(ret) != 0:
-            comment = data.ca.items.get('pendingFields', None)
-            data['pendingFields'] = ret
-            if comment:
-                data.ca.items['pendingFields'] = comment
 
     output = yaml.dump(data).strip()
     if inp != output:

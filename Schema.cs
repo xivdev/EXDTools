@@ -11,8 +11,6 @@ public record Sheet
 
     public required List<Field> Fields { get; set; }
 
-    public List<Field>? PendingFields { get; set; }
-
     public RelationsCollection? Relations { get; set; }
 }
 
@@ -20,8 +18,6 @@ public record Field
 {
     [YamlMember(Order = 0)]
     public string? Name { get; set; }
-
-    public string? PendingName { get; set; }
 
     [DefaultValue(FieldType.Scalar)]
     public FieldType Type { get; set; }

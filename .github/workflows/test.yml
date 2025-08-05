@@ -31,7 +31,6 @@ jobs:
         run: dotnet build -c Release
 
       - name: Retrieve cache
-        id: exd-cache
         uses: actions/cache@v4
         with:
           path: data
@@ -40,7 +39,7 @@ jobs:
             exd-
       
       - name: Download Game Data
-        uses: WorkingRobot/ffxiv-downloader@v5
+        uses: WorkingRobot/ffxiv-downloader@v7
         with:
           output-path: data
           regex: '^sqpack\/ffxiv\/0a0000\..+$'

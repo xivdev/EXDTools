@@ -4,6 +4,7 @@ using Lumina.Data.Structs.Excel;
 
 namespace EXDTooler.BreakingValidators;
 
+[Obsolete("Pending fields are no longer used, but this may be useful in the future")]
 public sealed class FieldNamesAndTypes : IBreakingValidator<FieldNamesAndTypes>
 {
     private FieldNamesAndTypes() { }
@@ -47,7 +48,7 @@ public sealed class FieldNamesAndTypes : IBreakingValidator<FieldNamesAndTypes>
                     throw new ValidationException($"Field '{field.Name}' cannot remove targets ({string.Join(", ", targetList)})");
             }
         }
-        
+
         if (baseFields.Count != newFields.Count)
             throw new ValidationException("Field count mismatch");
     }

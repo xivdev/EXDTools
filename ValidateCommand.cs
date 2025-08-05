@@ -235,43 +235,28 @@ public sealed class ValidateCommand
             Validate<SheetRefs>(sheet, cols, colDefs),
         ];
 
-        var pendingChecks = checks;
-        if (sheet.PendingFields != null)
-        {
-            var pendingSheet = sheet with { Fields = sheet.PendingFields };
-            pendingChecks = [
-                Validate<ColumnCount>(pendingSheet, cols, colDefs, true),
-                Validate<ColumnTypes>(pendingSheet, cols, colDefs, true),
-                true,
-                Validate<LinkConditionType>(pendingSheet, cols, colDefs, true),
-                Validate<LinkSwitchField>(pendingSheet, cols, colDefs, true),
-                Validate<Relations>(pendingSheet, cols, colDefs, true),
-                Validate<SheetRefs>(pendingSheet, cols, colDefs, true),
-            ];
-        }
-
-        if (checks.Any(x => !x) || pendingChecks.Any(x => !x))
+        if (checks.Any(x => !x))
             return false;
 
-        if (baseSheetFile != null)
-        {
-            Sheet baseSheet;
-            {
-                using var f = File.OpenText(baseSheetFile);
-                baseSheet = schemaDeserializer.Deserialize<Sheet>(f);
-            }
+        // if (baseSheetFile != null)
+        // {
+        //     Sheet baseSheet;
+        //     {
+        //         using var f = File.OpenText(baseSheetFile);
+        //         baseSheet = schemaDeserializer.Deserialize<Sheet>(f);
+        //     }
 
-            bool[] baseChecks = [
-                Validate<FieldNamesAndTypes>(baseSheet, sheet, cols, colDefs)
-            ];
+        //     bool[] baseChecks = [
+        //         Validate<FieldNamesAndTypes>(baseSheet, sheet, cols, colDefs)
+        //     ];
 
-            if (!baseChecks.Any(x => x))
-                return false;
-        }
+        //     if (!baseChecks.Any(x => x))
+        //         return false;
+        // }
         return true;
     }
 
-    private static bool Validate<T>(Sheet sheet, List<ExcelColumnDefinition> cols, ColDefReader colDefs, bool pending = false) where T : IValidator<T>
+    private static bool Validate<T>(Sheet sheet, ExcelColumnDefinition[] cols, ColDefReader colDefs) where T : IValidator<T>
     {
         try
         {
@@ -280,12 +265,13 @@ public sealed class ValidateCommand
         }
         catch (Exception ex)
         {
-            Log.AnnotatedError($"{typeof(T).Name}: {ex.Message}", new() { Title = $"Failed to validate{(pending ? " pending fields" : string.Empty)}", File = $"{sheet.Name}.yml" });
+            Log.AnnotatedError($"{typeof(T).Name}: {ex.Message}", new() { Title = "Failed to validate", File = $"{sheet.Name}.yml" });
             return false;
         }
     }
 
-    private static bool Validate<T>(Sheet baseSheet, Sheet newSheet, List<ExcelColumnDefinition> cols, ColDefReader colDefs) where T : IBreakingValidator<T>
+    [Obsolete("Pending fields are no longer used, but this may be useful in the future")]
+    private static bool Validate<T>(Sheet baseSheet, Sheet newSheet, ExcelColumnDefinition[] cols, ColDefReader colDefs) where T : IBreakingValidator<T>
     {
         try
         {

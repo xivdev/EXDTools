@@ -10,9 +10,11 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace EXDTooler;
 
-public sealed class ColDefReader(ImmutableSortedDictionary<string, List<ExcelColumnDefinition>> dict)
+public sealed class ColDefReader(ImmutableSortedDictionary<string, ExcelColumnDefinition[]> dict,
+    ImmutableSortedSet<string> subrows)
 {
-    public ImmutableSortedDictionary<string, List<ExcelColumnDefinition>> Sheets { get; } = dict;
+    public ImmutableSortedDictionary<string, ExcelColumnDefinition[]> Sheets { get; } = dict;
+    private ImmutableSortedSet<string> SubrowSheets { get; } = subrows;
 
     private byte[]? hash;
     public byte[] Hash => hash ??= CalcHash();
@@ -32,8 +34,24 @@ public sealed class ColDefReader(ImmutableSortedDictionary<string, List<ExcelCol
         var deserializer = new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
 
         using var f = File.OpenText(file);
-        var sheets = deserializer.Deserialize<Dictionary<string, List<ExcelColumnDefinition>>>(f);
-        return new(sheets.ToImmutableSortedDictionary());
+        var sheets = deserializer.Deserialize<Dictionary<string, ExcelColumnDefinition[]>>(f);
+
+        var subrowSheets = sheets.Where(sheet => sheet.Key.EndsWith("@Subrow"))
+            .Select(sheet => sheet.Key[..^7])
+            .ToImmutableSortedSet();
+        foreach (var sheet in subrowSheets)
+        {
+            sheets[sheet] = sheets[$"{sheet}@Subrow"];
+            Console.WriteLine(sheet);
+            sheets.Remove($"{sheet}@Subrow");
+        }
+
+        if (subrowSheets.Count == 0)
+        {
+            throw new InvalidOperationException("No subrow sheets found in the provided columns file.");
+        }
+
+        return new(sheets.ToImmutableSortedDictionary(), subrowSheets);
     }
 
     public static ColDefReader FromGameData(string gamePath)
@@ -41,20 +59,24 @@ public sealed class ColDefReader(ImmutableSortedDictionary<string, List<ExcelCol
         Log.Verbose("Loading game data");
         using var gameData = new GameData(gamePath, new LuminaOptions()
         {
-            CacheFileResources = false
+            CacheFileResources = false,
+            LoadMultithreaded = true
         });
 
+        var files = gameData.Excel.SheetNames
+            .Where(p => !p.Contains('/'))
+            .Select(sheetName => (sheetName, gameData.GetFile<ExcelHeaderFile>($"exd/{sheetName}.exh")!));
+
         return new(
-            gameData.Excel.SheetNames
-                .Where(p => !p.Contains('/'))
-                .Select(sheetName => (sheetName, gameData.GetFile<ExcelHeaderFile>($"exd/{sheetName}.exh")!))
-                .Select(pair => KeyValuePair.Create(pair.sheetName, pair.Item2.ColumnDefinitions.ToList()))
-                .ToImmutableSortedDictionary()
+            files.ToImmutableSortedDictionary(pair => pair.sheetName, pair => pair.Item2.ColumnDefinitions),
+            [.. files.Where(pair => pair.Item2.Header.Variant == ExcelVariant.Subrows).Select(pair => pair.sheetName)]
         );
     }
 
+    public ExcelColumnDefinition[] this[string sheetName] => Sheets[sheetName];
+
     public uint GetColumnsHash(string sheetName) =>
-        Crc32.Get(MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(Sheets[sheetName])));
+        Crc32.Get(MemoryMarshal.AsBytes(Sheets[sheetName].AsSpan()));
 
     public void WriteTo(TextWriter writer)
     {
@@ -66,7 +88,7 @@ public sealed class ColDefReader(ImmutableSortedDictionary<string, List<ExcelCol
             .EnsureRoundtrip()
             .Build();
 
-        schemaSerializer.Serialize(writer, Sheets);
+        schemaSerializer.Serialize(writer, Sheets.ToImmutableSortedDictionary(pair => $"{pair.Key}{(SubrowSheets.Contains(pair.Key) ? "@Subrow" : string.Empty)}", pair => pair.Value));
     }
 
     private byte[] CalcHash()
@@ -83,6 +105,11 @@ public sealed class ColDefReader(ImmutableSortedDictionary<string, List<ExcelCol
                     w.Write((ushort)item.Type);
                     w.Write(item.Offset);
                 }
+            }
+
+            foreach (var subrow in SubrowSheets)
+            {
+                w.Write(subrow);
             }
 
             w.Flush();
