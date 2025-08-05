@@ -74,7 +74,7 @@ for path in sorted(list(Path('./schemas').glob('*/*.yml')), key = lambda p: p.st
 
     ret = []
     for fld in data['fields']:
-        ret.append(recurse(fld, lambda f: order_keys(f, ['name', 'comment', 'type', 'count', 'fields']), apply_flow_style, apply_names))
+        ret.append(recurse(fld, lambda f: order_keys(f, ['name', 'comment', 'type', 'count', 'fields']), apply_flow_style))
     if len(ret) != 0:
         comment = data.ca.items.get('fields', None)
         data['fields'] = ret
