@@ -7,6 +7,7 @@ using EXDTooler.Validators;
 using Json.Schema;
 using Lumina.Data.Structs.Excel;
 using Yaml2JsonNode;
+using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -163,6 +164,19 @@ public sealed class ValidateCommand
     }
 
     private static bool Validate(string sheetFile, ColDefReader colDefs, IDeserializer schemaDeserializer, Func<YamlDocument, EvaluationResults> evaluateSchema, string? baseSheetFile)
+    {
+        try
+        {
+            return ValidateCore(sheetFile, colDefs, schemaDeserializer, evaluateSchema, baseSheetFile);
+        }
+        catch (YamlException ex)
+        {
+            Log.AnnotatedError($"Failed to parse schema file: {ex.Message}", new() { Title = "Invalid YAML", File = Path.GetFileName(sheetFile) });
+            return false;
+        }
+    }
+
+    private static bool ValidateCore(string sheetFile, ColDefReader colDefs, IDeserializer schemaDeserializer, Func<YamlDocument, EvaluationResults> evaluateSchema, string? baseSheetFile)
     {
         {
             using var f = File.OpenText(sheetFile);
